@@ -5,8 +5,8 @@ from temporalio import activity
 from temporalio.testing import WorkflowEnvironment
 from temporalio.worker import Worker
 
-from activities import say_hello
-from workflows import SayHello
+from helloworld.activities import say_hello
+from helloworld.workflows import SayHello
 
 
 @pytest.mark.asyncio
