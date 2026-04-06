@@ -8,6 +8,11 @@ class ValetParkingInput:
 
 
 @dataclass
+class ValetParkingOutput:
+    pass
+
+
+@dataclass
 class MoveCarInput:
     license_plate: str
     from_location: str
@@ -19,8 +24,3 @@ class MoveCarOutput:
     distance_driven: float
     start_time: str
     end_time: str
-
-
-@dataclass
-class ValetParkingOutput:
-    pass
