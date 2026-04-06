@@ -3,7 +3,8 @@ import random
 from datetime import datetime, timezone
 
 from temporalio import activity
-from temporalio.client import Client
+from temporalio.client import Client, WithStartWorkflowOperation
+from temporalio.common import WorkflowIDConflictPolicy
 
 from valet.models import (
     FindNearestValetZoneInput,
@@ -13,11 +14,13 @@ from valet.models import (
     MoveCarInput,
     MoveCarOutput,
     NUM_VALET_ZONES,
+    ParkingLotInput,
     ReleaseSpaceInput,
     ReleaseSpaceOutput,
     RequestSpaceInput,
     RequestSpaceOutput,
 )
+from valet.parking_lot_workflow import ParkingLotWorkflow
 
 
 @activity.defn
@@ -47,9 +50,17 @@ async def move_car(input: MoveCarInput) -> MoveCarOutput:
 @activity.defn
 async def request_space(input: RequestSpaceInput) -> RequestSpaceOutput:
     client = await Client.connect("localhost:7233")
-    handle = client.get_workflow_handle("parking-lot")
-    space_number = await handle.execute_update(
-        "request_space", arg=input.license_plate
+    start_op = WithStartWorkflowOperation(
+        ParkingLotWorkflow.run,
+        ParkingLotInput(spaces=None),
+        id="parking-lot",
+        task_queue="valet",
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
+    space_number = await client.execute_update_with_start_workflow(
+        ParkingLotWorkflow.request_space,
+        input.license_plate,
+        start_workflow_operation=start_op,
     )
     return RequestSpaceOutput(space_number=space_number)
 
@@ -57,8 +68,18 @@ async def request_space(input: RequestSpaceInput) -> RequestSpaceOutput:
 @activity.defn
 async def release_space(input: ReleaseSpaceInput) -> ReleaseSpaceOutput:
     client = await Client.connect("localhost:7233")
-    handle = client.get_workflow_handle("parking-lot")
-    await handle.execute_update("release_space", arg=input.license_plate)
+    start_op = WithStartWorkflowOperation(
+        ParkingLotWorkflow.run,
+        ParkingLotInput(spaces=None),
+        id="parking-lot",
+        task_queue="valet",
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
+    await client.execute_update_with_start_workflow(
+        ParkingLotWorkflow.release_space,
+        input.license_plate,
+        start_workflow_operation=start_op,
+    )
     return ReleaseSpaceOutput()
 
 

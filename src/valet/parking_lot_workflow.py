@@ -8,12 +8,15 @@ with workflow.unsafe.imports_passed_through():
 @workflow.defn
 class ParkingLotWorkflow:
 
-    @workflow.run
-    async def run(self, input: ParkingLotInput) -> ParkingLotOutput:
-        self.spaces: dict[str, str | None] = input.spaces or {
+    def __init__(self) -> None:
+        self.spaces: dict[str, str | None] = {
             str(i): None for i in range(1, 31)
         }
         self._should_continue_as_new = False
+
+    @workflow.run
+    async def run(self, input: ParkingLotInput) -> ParkingLotOutput:
+        self.spaces = input.spaces or self.spaces
 
         await workflow.wait_condition(lambda: self._should_continue_as_new)
         workflow.continue_as_new(ParkingLotInput(spaces=self.spaces))
@@ -45,5 +48,8 @@ class ParkingLotWorkflow:
         return self.spaces
 
     def _check_continue_as_new(self) -> None:
-        if workflow.info().is_continue_as_new_suggested():
+        if (
+            workflow.info().is_continue_as_new_suggested()
+            or workflow.info().get_current_history_length() >= 500
+        ):
             self._should_continue_as_new = True
