@@ -3,10 +3,18 @@ import asyncio
 import random
 
 from temporalio.client import Client
+from temporalio.common import WorkflowIDConflictPolicy
 
-from valet.models import ValetParkingInput
+from valet.models import (
+    Location,
+    LocationKind,
+    NUM_VALET_ZONES,
+    ParkingLotInput,
+    ValetParkingInput,
+)
+from valet.parking_lot_workflow import ParkingLotWorkflow
 from valet.utils import generate_license_plate
-from valet.workflow import ValetParkingWorkflow
+from valet.valet_workflow import ValetParkingWorkflow
 
 
 async def main() -> None:
@@ -18,17 +26,32 @@ async def main() -> None:
 
     client = await Client.connect("localhost:7233")
 
+    # Ensure parking lot workflow is running
+    await client.start_workflow(
+        ParkingLotWorkflow.run,
+        ParkingLotInput(spaces=None),
+        id="parking-lot",
+        task_queue="valet",
+        id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
+    )
+
     print("Simulator running (Ctrl+C to stop) ...")
 
     while True:
         license_plate = generate_license_plate()
-        trip_duration = random.randint(60, 300)
+        trip_duration = random.randint(5, 30)
+
+        valet_zone_location = Location(
+            kind=LocationKind.VALET_ZONE,
+            id=str(random.randint(1, NUM_VALET_ZONES)),
+        )
 
         handle = await client.start_workflow(
             ValetParkingWorkflow.run,
             ValetParkingInput(
                 license_plate=license_plate,
                 trip_duration_seconds=trip_duration,
+                valet_zone_location=valet_zone_location,
             ),
             id=f"valet-{license_plate}",
             task_queue="valet",
@@ -37,7 +60,7 @@ async def main() -> None:
         if not args.quiet:
             print(f"Started workflow {handle.id} (trip: {trip_duration}s)")
 
-        await asyncio.sleep(random.uniform(2, 10))
+        await asyncio.sleep(random.uniform(1, 5))
 
 
 if __name__ == "__main__":
