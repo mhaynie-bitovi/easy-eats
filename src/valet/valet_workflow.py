@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from temporalio import workflow
+from temporalio.common import VersioningBehavior
 
 with workflow.unsafe.imports_passed_through():
     from valet.activities import (
@@ -21,7 +22,7 @@ with workflow.unsafe.imports_passed_through():
     )
 
 
-@workflow.defn
+@workflow.defn(versioning_behavior=VersioningBehavior.AUTO_UPGRADE)
 class ValetParkingWorkflow:
 
     @workflow.run

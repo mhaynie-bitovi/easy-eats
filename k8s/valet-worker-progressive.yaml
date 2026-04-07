@@ -4,17 +4,18 @@ metadata:
   name: valet-worker
   namespace: default
 spec:
-  temporalConnection:
-    name: cluster-default
-  temporalNamespace: default
-  rolloutStrategy:
-    type: Progressive
-    progressive:
-      steps:
-        - rampPercentage: 25
-          pauseDuration: 30s
-        - rampPercentage: 75
-          pauseDuration: 30s
+  workerOptions:
+    connectionRef:
+      name: cluster-default
+    temporalNamespace: default
+  rollout:
+    strategy: Progressive
+    steps:
+      - rampPercentage: 25
+        pauseDuration: 30s
+      - rampPercentage: 75
+        pauseDuration: 30s
+  sunset: {}
   replicas: 1
   template:
     spec:

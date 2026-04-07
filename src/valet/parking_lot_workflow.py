@@ -1,11 +1,12 @@
 from temporalio import workflow
+from temporalio.common import VersioningBehavior
 from temporalio.exceptions import ApplicationError
 
 with workflow.unsafe.imports_passed_through():
     from valet.models import ParkingLotInput, ParkingLotOutput
 
 
-@workflow.defn
+@workflow.defn(versioning_behavior=VersioningBehavior.AUTO_UPGRADE)
 class ParkingLotWorkflow:
 
     def __init__(self) -> None:

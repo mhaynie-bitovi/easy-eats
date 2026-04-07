@@ -2,29 +2,38 @@ TAG ?= latest
 IMAGE_NAME = valet-worker
 TEMPORAL_NAMESPACE = temporal
 WORKER_CONTROLLER_NAMESPACE = temporal-worker-controller
+WORKER_CONTROLLER_VERSION ?= 0.24.0
 
 .PHONY: setup build deploy status logs port-forward load clean
 
-## setup — start minikube, deploy Temporal Server, install Worker Controller
+## setup — start minikube, deploy Temporal dev server, install Worker Controller
 setup:
 	@echo "==> Starting minikube..."
-	minikube start --cpus=4 --memory=8192
-	@echo "==> Adding Helm repos..."
-	helm repo add temporal https://temporalio.github.io/helm-charts
-	helm repo add temporal-worker-controller https://temporalio.github.io/worker-controller
-	helm repo update
+	minikube start --cpus=4 --memory=4096
 	@echo "==> Creating temporal namespace..."
 	kubectl create namespace $(TEMPORAL_NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
-	@echo "==> Installing Temporal Server..."
-	helm upgrade --install temporal temporal/temporal \
-		--namespace $(TEMPORAL_NAMESPACE) \
-		-f k8s/temporal-server-values.yaml \
-		--timeout 10m \
+	@echo "==> Deploying Temporal dev server..."
+	kubectl apply -f k8s/temporal-dev-server.yaml
+	kubectl rollout status deployment/temporal-dev-server -n $(TEMPORAL_NAMESPACE) --timeout=120s
+	@echo "==> Installing Worker Controller CRDs..."
+	kubectl create namespace $(WORKER_CONTROLLER_NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
+	helm upgrade --install temporal-worker-controller-crds \
+		oci://docker.io/temporalio/temporal-worker-controller-crds \
+		--version $(WORKER_CONTROLLER_VERSION) \
+		--namespace $(WORKER_CONTROLLER_NAMESPACE)
+	@echo "==> Installing cert-manager..."
+	helm repo add jetstack https://charts.jetstack.io --force-update
+	helm upgrade --install cert-manager jetstack/cert-manager \
+		--namespace cert-manager \
+		--create-namespace \
+		--set crds.enabled=true \
 		--wait
 	@echo "==> Installing Worker Controller..."
-	kubectl create namespace $(WORKER_CONTROLLER_NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
-	helm upgrade --install temporal-worker-controller temporal-worker-controller/temporal-worker-controller \
+	helm upgrade --install temporal-worker-controller \
+		oci://docker.io/temporalio/temporal-worker-controller \
+		--version $(WORKER_CONTROLLER_VERSION) \
 		--namespace $(WORKER_CONTROLLER_NAMESPACE) \
+		--set replicas=1 \
 		--wait
 	@echo "==> Setup complete. Verifying pods..."
 	kubectl get pods -n $(TEMPORAL_NAMESPACE)
@@ -77,11 +86,14 @@ clean:
 	-kubectl delete -f k8s/temporal-connection.yaml
 	@echo "==> Uninstalling Worker Controller..."
 	-helm uninstall temporal-worker-controller -n $(WORKER_CONTROLLER_NAMESPACE)
-	@echo "==> Uninstalling Temporal Server..."
-	-helm uninstall temporal -n $(TEMPORAL_NAMESPACE)
+	-helm uninstall temporal-worker-controller-crds -n $(WORKER_CONTROLLER_NAMESPACE)
+	-helm uninstall cert-manager -n cert-manager
+	@echo "==> Deleting Temporal dev server..."
+	-kubectl delete -f k8s/temporal-dev-server.yaml
 	@echo "==> Deleting namespaces..."
 	-kubectl delete namespace $(TEMPORAL_NAMESPACE)
 	-kubectl delete namespace $(WORKER_CONTROLLER_NAMESPACE)
+	-kubectl delete namespace cert-manager
 	@echo "==> Stopping minikube..."
 	minikube stop
 	@echo "==> Clean complete."
