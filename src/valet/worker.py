@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 
 from temporalio.client import Client
@@ -16,6 +17,8 @@ from valet.valet_workflow import ValetParkingWorkflow
 
 
 async def main():
+    logging.basicConfig(level=logging.INFO)
+
     temporal_address = os.environ.get("TEMPORAL_ADDRESS", "localhost:7233")
     temporal_namespace = os.environ.get("TEMPORAL_NAMESPACE", "default")
     deployment_name = os.environ.get("TEMPORAL_DEPLOYMENT_NAME")

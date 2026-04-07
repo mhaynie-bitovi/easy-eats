@@ -20,5 +20,6 @@ COPY --from=builder /app/src /app/src
 COPY pyproject.toml .
 
 ENV PYTHONPATH=/app/src
+ENV PYTHONUNBUFFERED=1
 
 ENTRYPOINT ["python", "-m", "valet.worker"]
