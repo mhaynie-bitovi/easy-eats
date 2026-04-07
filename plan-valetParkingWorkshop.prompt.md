@@ -81,7 +81,7 @@ All workflow/activity inputs and outputs are `@dataclass` classes defined in `mo
 - **`MoveCarOutput` kept** with extra fields: `distance_driven`, `start_time`, `end_time`
 - **Simulator uses `start_workflow`** (non-blocking) not `execute_workflow` — enables rapid concurrent workflow creation
 - **Simulator `--quiet` flag** via argparse to suppress per-workflow output
-- **Existing code untouched** — easy_eats modules stay as-is for reference
+- **Existing code untouched** — existing modules stay as-is for reference
 - **No new dependencies** — activities use stdlib only (random, datetime)
 - **No `--count`/`--interval` flags** on simulator — keep it simple
 - **No workflow execution timeout** — workshop environment is ephemeral

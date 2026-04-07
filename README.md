@@ -1,4 +1,4 @@
-# easy-eats
+# Temporal Workshop
 
 A Temporal workflow application for order management.
 
@@ -13,7 +13,7 @@ A Temporal workflow application for order management.
 
    ```sh
    git clone <repo-url>
-   cd easy-eats
+   cd temporal-workshop
    ```
 
 2. Create and activate a virtual environment:

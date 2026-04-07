@@ -1,0 +1,8 @@
+apiVersion: temporal.io/v1alpha1
+kind: TemporalConnection
+metadata:
+  name: cluster-default
+  namespace: default
+spec:
+  address: temporal-frontend.temporal.svc.cluster.local:7233
+  namespace: default

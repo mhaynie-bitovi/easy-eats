@@ -1,6 +1,6 @@
 # Plan: Worker Controller Workshop Exercise (Minikube)
 
-Build a hands-on workshop exercise where attendees deploy the easy-eats valet worker to minikube using the Temporal Worker Controller, then practice deploying code changes (replay-safe and non-replay-safe), observing progressive rollouts, and performing rollbacks/emergency remediation.
+Build a hands-on workshop exercise where attendees deploy the valet worker to minikube using the Temporal Worker Controller, then practice deploying code changes (replay-safe and non-replay-safe), observing progressive rollouts, and performing rollbacks/emergency remediation.
 
 ## TL;DR
 

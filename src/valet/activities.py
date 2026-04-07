@@ -1,4 +1,5 @@
 import asyncio
+import os
 import random
 from datetime import datetime, timezone
 
@@ -49,7 +50,9 @@ async def move_car(input: MoveCarInput) -> MoveCarOutput:
 
 @activity.defn
 async def request_space(input: RequestSpaceInput) -> RequestSpaceOutput:
-    client = await Client.connect("localhost:7233")
+    temporal_address = os.environ.get("TEMPORAL_ADDRESS", "localhost:7233")
+    temporal_namespace = os.environ.get("TEMPORAL_NAMESPACE", "default")
+    client = await Client.connect(temporal_address, namespace=temporal_namespace)
     start_op = WithStartWorkflowOperation(
         ParkingLotWorkflow.run,
         ParkingLotInput(spaces=None),
@@ -67,7 +70,9 @@ async def request_space(input: RequestSpaceInput) -> RequestSpaceOutput:
 
 @activity.defn
 async def release_space(input: ReleaseSpaceInput) -> ReleaseSpaceOutput:
-    client = await Client.connect("localhost:7233")
+    temporal_address = os.environ.get("TEMPORAL_ADDRESS", "localhost:7233")
+    temporal_namespace = os.environ.get("TEMPORAL_NAMESPACE", "default")
+    client = await Client.connect(temporal_address, namespace=temporal_namespace)
     start_op = WithStartWorkflowOperation(
         ParkingLotWorkflow.run,
         ParkingLotInput(spaces=None),
