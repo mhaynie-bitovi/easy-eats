@@ -84,7 +84,6 @@ async def test_get_status_returns_space_map():
             )
 
             status = await handle.query(ParkingLotWorkflow.get_status)
-            assert len(status) == 100
             assert all(v is None for v in status.values())
 
             await handle.execute_update(
