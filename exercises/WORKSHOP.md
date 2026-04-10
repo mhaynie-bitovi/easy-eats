@@ -6,6 +6,7 @@ Deploy the valet worker to minikube using the Temporal Worker Controller, then p
 
 ## Prerequisites
 
+- [Temporal CLI](https://docs.temporal.io/cli#install)
 - [minikube](https://minikube.sigs.k8s.io/docs/start/)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 - [Helm](https://helm.sh/docs/intro/install/)
@@ -17,21 +18,33 @@ Deploy the valet worker to minikube using the Temporal Worker Controller, then p
 
 ## Part 0: Setup
 
-Start minikube, deploy Temporal Server, and install the Worker Controller:
+### Start the Temporal dev server
+
+In a **dedicated terminal**, start the Temporal dev server locally:
+
+```bash
+make temporal-server
+```
+
+This runs `temporal server start-dev` on your host. The gRPC frontend is at `localhost:7233` and the Web UI is at [http://localhost:8233](http://localhost:8233).
+
+**Leave this terminal running for the rest of the workshop.**
+
+### Start minikube and install the Worker Controller
+
+In a **new terminal**:
 
 ```bash
 make setup
 ```
 
 This will:
-1. Start minikube with 4 CPUs / 8 GB RAM
-2. Deploy Temporal Server (PostgreSQL backend) into the `temporal` namespace
-3. Install the Worker Controller into the `temporal-worker-controller` namespace
+1. Start minikube with 4 CPUs / 4 GB RAM
+2. Install the Worker Controller into the `temporal-worker-controller` namespace
 
 Wait for all pods to be ready:
 
 ```bash
-kubectl get pods -n temporal
 kubectl get pods -n temporal-worker-controller
 ```
 
@@ -81,25 +94,13 @@ You should see:
 - A Kubernetes Deployment created by the controller with versioned pods
 - Pods in `Running` state
 
-Open the Temporal Web UI:
-
-```bash
-make port-forward
-```
-
-Navigate to [http://localhost:8080](http://localhost:8080) and check the **Workers** tab — you should see the valet worker registered.
+Open the Temporal Web UI at [http://localhost:8233](http://localhost:8233). You should see the Workflows page for the `default` namespace. There won't be any workflows yet — that comes next.
 
 ---
 
 ## Part 2: Generate load
 
-In a **separate terminal**, ensure port-forwarding is running:
-
-```bash
-make port-forward
-```
-
-In a **third terminal**, start the load simulator:
+In a **separate terminal**, start the load simulator:
 
 ```bash
 make load
@@ -107,7 +108,7 @@ make load
 
 Watch workflows being created. The simulator starts a new `ValetParkingWorkflow` every 1–5 seconds, each with a random trip duration of 5–30 seconds. Many workflows will be in-flight (sleeping) at any given time, making them long-running.
 
-Check the Temporal UI — you'll see workflows starting, sleeping, and completing.
+Check the Temporal UI at [http://localhost:8233](http://localhost:8233) — you'll see workflows starting, sleeping, and completing.
 
 **Leave the load simulator running for the rest of the workshop.**
 
@@ -446,4 +447,6 @@ When you're done:
 make clean
 ```
 
-This tears down the worker deployment, Temporal Server, Worker Controller, and stops minikube.
+This tears down the worker deployment, Worker Controller, and stops minikube.
+
+Then stop the Temporal dev server by pressing **Ctrl+C** in its terminal.

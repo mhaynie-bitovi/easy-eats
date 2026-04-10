@@ -4,4 +4,4 @@ metadata:
   name: cluster-default
   namespace: default
 spec:
-  hostPort: temporal-frontend.temporal.svc.cluster.local:7233
+  hostPort: host.minikube.internal:7233
