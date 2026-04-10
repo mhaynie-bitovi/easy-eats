@@ -30,4 +30,4 @@ async def test_replay_valet_v1():
         )
     """
     # TODO: Implement the replay test
-    pytest.skip("Complete this test by loading a captured history and replaying it")
+    pytest.skip("Exercise incomplete: implement the replay test following the example in the docstring above")

@@ -53,7 +53,7 @@ PYTHONPATH=. python -m valet.load_simulator
 temporal workflow show --workflow-id valet-<plate> --output json > history/valet_v1_history.json
 ```
 
-> **Tip:** Use `temporal workflow list` to find a completed workflow ID.
+> **Tip:** The workflow ID follows the format `valet-<STATE>-<PLATE>` (e.g., `valet-CA-1ABC123`). Use `temporal workflow list` to find a completed workflow ID.
 
 7. Open `tests/test_replay.py` — it has a `TODO` skeleton. Complete the replay test:
 
