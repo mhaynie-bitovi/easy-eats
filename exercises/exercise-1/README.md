@@ -23,49 +23,32 @@ cd exercises/exercise-1/practice
 temporal server start-dev
 ```
 
-4. Start the worker (in a **new terminal**):
+4. Start the worker (in a **new terminal** from the same directory):
 
 ```bash
-cd exercises/exercise-1/practice
-PYTHONPATH=. python -m valet.worker
+make worker
 ```
 
-5. Start the load simulator (in a **new terminal**):
+5. Start the load simulator (in a **new terminal** from the same directory):
 
 ```bash
-cd exercises/exercise-1/practice
-PYTHONPATH=. python -m valet.load_simulator
+make load
 ```
 
 6. Wait for a workflow to complete (trip durations are 5–30 seconds). Then **stop the load simulator** (Ctrl+C) and export a completed workflow's history:
 
 ```bash
-temporal workflow show --workflow-id valet-<plate> --output json > history/valet_v1_history.json
+temporal workflow show --workflow-id <workfolw-id> --output json > history/valet_v1_history.json
 ```
 
-> **Tip:** The workflow ID follows the format `valet-<STATE>-<PLATE>` (e.g., `valet-CA-1ABC123`). Use `temporal workflow list` to find a completed workflow ID.
+> **Tip:** The workflow ID follows the format `valet-<STATE>-<PLATE>` (e.g., `valet-CA-1ABC123`). You can copy a workflow ID from the Temporal Web UI at [http://localhost:8233](http://localhost:8233), or use `temporal workflow list` to find one.
 
-7. Open `tests/test_replay.py` — it has a `TODO` skeleton. Complete the replay test:
-
-```python
-from temporalio.worker import Replayer, WorkflowHistory
-from valet.valet_workflow import ValetParkingWorkflow
-
-@pytest.mark.asyncio
-async def test_replay_valet_v1():
-    with open("history/valet_v1_history.json", "r") as f:
-        history_json = f.read()
-
-    replayer = Replayer(workflows=[ValetParkingWorkflow])
-    await replayer.replay_workflow(
-        WorkflowHistory.from_json("valet_v1_history", history_json)
-    )
-```
+7. Open `tests/test_replay.py` and review the replay test. It loads the history you just captured and replays it against the current workflow code. If the code produces a different command sequence than the history, the test fails with a non-determinism error (NDE).
 
 8. Run the test — it should **pass**, confirming the replay infrastructure works:
 
 ```bash
-PYTHONPATH=. python -m pytest tests/test_replay.py -v
+make test
 ```
 
 ---
@@ -121,7 +104,7 @@ await workflow.execute_activity(
 4. Run the replay test — **it fails** with a non-determinism error:
 
 ```bash
-PYTHONPATH=. python -m pytest tests/test_replay.py -v
+make test
 ```
 
 > **This is the "aha" moment.** The old workflow history doesn't have a `notify_owner` command, but the new code expects one. The command sequence doesn't match → non-determinism error.
@@ -149,7 +132,7 @@ if workflow.patched("add-notify-owner"):
 3. Run the replay test — **it passes**:
 
 ```bash
-PYTHONPATH=. python -m pytest tests/test_replay.py -v
+make test
 ```
 
 > Old histories skip the patched block. New executions run it. The `workflow.patched()` marker tells the replayer "this code was added after the history was captured."

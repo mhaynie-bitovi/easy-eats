@@ -1,0 +1,3 @@
+- the variables and methods and comments/documentation referring to parking spaces should be named better so it's using the phrase "parking space" not just "space"
+- the valet parking workflow files should match the name of the class inside them
+- theh valet parking workflow is logging that it's "waiting". This is a simulation of a realworld situation, a production implementation would probably use a signal rather than a hardcoded wait. But this context belongs in a code comment, not logged.

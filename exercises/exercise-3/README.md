@@ -29,11 +29,7 @@ make setup
 
 ## Part A — Deploy V1 and generate load (~8 min)
 
-1. Navigate to the exercise folder:
-
-```bash
-cd exercises/exercise-3/practice
-```
+1. Ensure you're still in the `exercises/exercise-3/practice` directory from Pre-Setup.
 
 2. Examine the k8s manifests:
    - `k8s/temporal-connection.yaml` — points to the host Temporal server

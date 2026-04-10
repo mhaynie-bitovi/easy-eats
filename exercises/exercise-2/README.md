@@ -17,8 +17,8 @@ cd exercises/exercise-2/practice
 2. Start the **unversioned** V1 worker and the load simulator:
 
 ```bash
-PYTHONPATH=. python -m valet.worker &
-PYTHONPATH=. python -m valet.load_simulator
+make worker &
+make load
 ```
 
    Let several workflows start. Then **stop** the V1 worker and the load simulator.
@@ -73,7 +73,7 @@ PYTHONPATH=. python -m valet.load_simulator
 4. Start the **versioned** V1 worker:
 
 ```bash
-TEMPORAL_DEPLOYMENT_NAME=valet-deploy TEMPORAL_WORKER_BUILD_ID=v1 PYTHONPATH=. python -m valet.worker
+make versioned-worker BUILD_ID=v1
 ```
 
 5. Set V1 as the current version:
@@ -89,7 +89,7 @@ temporal worker deployment set-current \
 7. Deploy the V2 worker (the patched code from Exercise 1):
 
 ```bash
-TEMPORAL_DEPLOYMENT_NAME=valet-deploy TEMPORAL_WORKER_BUILD_ID=v2 PYTHONPATH=. python -m valet.worker
+make versioned-worker BUILD_ID=v2
 ```
 
 8. Set V2 as current:
@@ -183,7 +183,7 @@ class ValetParkingWorkflow:
 3. Deploy the V3 worker:
 
 ```bash
-TEMPORAL_DEPLOYMENT_NAME=valet-deploy TEMPORAL_WORKER_BUILD_ID=v3 PYTHONPATH=. python -m valet.worker
+make versioned-worker BUILD_ID=v3
 ```
 
 4. Set V3 as current:

@@ -69,4 +69,4 @@ make clean
 | `kubectl patch` has no effect | YAML syntax error in `-p` flag | Check JSON quoting; use single quotes around JSON |
 | Pods in CrashLoopBackOff | Worker code has a runtime error | Check logs: `kubectl logs <pod-name>` |
 | New workflows still going to old version | Didn't set new build ID as current | Run `temporal worker deployment set-current` |
-| `ModuleNotFoundError` when running worker | Missing `PYTHONPATH` | Run with `PYTHONPATH=. python -m valet.worker` |
+| `ModuleNotFoundError` when running worker | Missing `PYTHONPATH` | Use `make worker` (the Makefile sets `PYTHONPATH` for you) |
