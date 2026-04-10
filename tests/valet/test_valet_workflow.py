@@ -6,8 +6,6 @@ from temporalio.testing import WorkflowEnvironment
 from temporalio.worker import Worker
 
 from valet.models import (
-    FindNearestValetZoneInput,
-    FindNearestValetZoneOutput,
     Location,
     LocationKind,
     MoveCarInput,
@@ -37,15 +35,6 @@ async def mock_release_space(input: ReleaseSpaceInput) -> ReleaseSpaceOutput:
     return ReleaseSpaceOutput()
 
 
-@activity.defn(name="find_nearest_valet_zone")
-async def mock_find_nearest_valet_zone(
-    input: FindNearestValetZoneInput,
-) -> FindNearestValetZoneOutput:
-    return FindNearestValetZoneOutput(
-        location=Location(kind=LocationKind.VALET_ZONE, id="2")
-    )
-
-
 @pytest.mark.asyncio
 async def test_valet_parking_workflow():
     task_queue_name = str(uuid.uuid4())
@@ -59,7 +48,6 @@ async def test_valet_parking_workflow():
                 mock_move_car,
                 mock_request_space,
                 mock_release_space,
-                mock_find_nearest_valet_zone,
             ],
         ):
             result = await env.client.execute_workflow(

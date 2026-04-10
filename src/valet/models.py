@@ -62,16 +62,6 @@ class ReleaseSpaceOutput:
 
 
 @dataclass
-class FindNearestValetZoneInput:
-    pass
-
-
-@dataclass
-class FindNearestValetZoneOutput:
-    location: Location
-
-
-@dataclass
 class ParkingLotInput:
     spaces: dict[str, str | None] | None
 

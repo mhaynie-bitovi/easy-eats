@@ -8,13 +8,8 @@ from temporalio.client import Client, WithStartWorkflowOperation
 from temporalio.common import WorkflowIDConflictPolicy
 
 from valet.models import (
-    FindNearestValetZoneInput,
-    FindNearestValetZoneOutput,
-    Location,
-    LocationKind,
     MoveCarInput,
     MoveCarOutput,
-    NUM_VALET_ZONES,
     ParkingLotInput,
     ReleaseSpaceInput,
     ReleaseSpaceOutput,
@@ -87,12 +82,3 @@ async def release_space(input: ReleaseSpaceInput) -> ReleaseSpaceOutput:
     )
     return ReleaseSpaceOutput()
 
-
-@activity.defn
-async def find_nearest_valet_zone(
-    input: FindNearestValetZoneInput,
-) -> FindNearestValetZoneOutput:
-    zone_id = str(random.randint(1, NUM_VALET_ZONES))
-    return FindNearestValetZoneOutput(
-        location=Location(kind=LocationKind.VALET_ZONE, id=zone_id)
-    )

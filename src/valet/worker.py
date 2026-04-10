@@ -7,7 +7,6 @@ from temporalio.common import WorkerDeploymentVersion
 from temporalio.worker import Worker, WorkerDeploymentConfig
 
 from valet.activities import (
-    find_nearest_valet_zone,
     move_car,
     release_space,
     request_space,
@@ -43,7 +42,7 @@ async def main():
         client,
         task_queue="valet",
         workflows=[ValetParkingWorkflow, ParkingLotWorkflow],
-        activities=[move_car, request_space, release_space, find_nearest_valet_zone],
+        activities=[move_car, request_space, release_space],
         deployment_config=deployment_config,
     )
 

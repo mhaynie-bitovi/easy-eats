@@ -5,13 +5,11 @@ from temporalio.common import VersioningBehavior
 
 with workflow.unsafe.imports_passed_through():
     from valet.activities import (
-        find_nearest_valet_zone,
         move_car,
         release_space,
         request_space,
     )
     from valet.models import (
-        FindNearestValetZoneInput,
         Location,
         LocationKind,
         MoveCarInput,
@@ -61,20 +59,13 @@ class ValetParkingWorkflow:
         # Wait for the owner's trip
         await workflow.sleep(input.trip_duration_seconds)
 
-        # Find nearest valet zone for return
-        valet_zone_result = await workflow.execute_activity(
-            find_nearest_valet_zone,
-            FindNearestValetZoneInput(),
-            start_to_close_timeout=timedelta(seconds=10),
-        )
-
-        # Move car from parking space to return valet zone
+        # Move car from parking space back to the original valet zone
         await workflow.execute_activity(
             move_car,
             MoveCarInput(
                 license_plate=input.license_plate,
                 from_location=assigned_space,
-                to_location=valet_zone_result.location,
+                to_location=input.valet_zone_location,
             ),
             start_to_close_timeout=timedelta(seconds=10),
         )
@@ -87,7 +78,7 @@ class ValetParkingWorkflow:
         )
 
         workflow.logger.info(
-            f"Car {input.license_plate} returned to valet zone {valet_zone_result.location.id}."
+            f"Car {input.license_plate} returned to valet zone {input.valet_zone_location.id}."
         )
 
         return ValetParkingOutput()
