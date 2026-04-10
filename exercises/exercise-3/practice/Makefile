@@ -67,7 +67,7 @@ logs:
 
 ## load — run the load simulator locally (Temporal dev server must be running)
 load:
-	python -m valet.load_simulator
+	PYTHONPATH=. python -m valet.load_simulator
 
 ## clean — tear down everything
 clean:
@@ -78,9 +78,3 @@ clean:
 	-helm uninstall temporal-worker-controller -n $(WORKER_CONTROLLER_NAMESPACE)
 	-helm uninstall temporal-worker-controller-crds -n $(WORKER_CONTROLLER_NAMESPACE)
 	-helm uninstall cert-manager -n cert-manager
-	@echo "==> Deleting namespaces..."
-	-kubectl delete namespace $(WORKER_CONTROLLER_NAMESPACE)
-	-kubectl delete namespace cert-manager
-	@echo "==> Stopping minikube..."
-	minikube stop
-	@echo "==> Clean complete."

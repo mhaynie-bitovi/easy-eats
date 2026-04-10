@@ -1,0 +1,20 @@
+apiVersion: temporal.io/v1alpha1
+kind: TemporalWorkerDeployment
+metadata:
+  name: valet-worker
+  namespace: default
+spec:
+  workerOptions:
+    connectionRef:
+      name: cluster-default
+    temporalNamespace: default
+  rollout:
+    strategy: AllAtOnce
+  sunset: {}
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: valet-worker
+          image: valet-worker:v1
+          imagePullPolicy: IfNotPresent

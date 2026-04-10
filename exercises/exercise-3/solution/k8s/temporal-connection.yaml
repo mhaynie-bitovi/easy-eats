@@ -1,0 +1,7 @@
+apiVersion: temporal.io/v1alpha1
+kind: TemporalConnection
+metadata:
+  name: cluster-default
+  namespace: default
+spec:
+  hostPort: host.minikube.internal:7233

@@ -6,9 +6,6 @@ dependencies = [
     "temporalio>=1.24.0",
 ]
 
-[tool.setuptools.packages.find]
-where = ["src"]
-
 [tool.pyright]
 typeCheckingMode = "basic"
 reportUnusedExpression = true

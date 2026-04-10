@@ -1,0 +1,25 @@
+apiVersion: temporal.io/v1alpha1
+kind: TemporalWorkerDeployment
+metadata:
+  name: valet-worker
+  namespace: default
+spec:
+  workerOptions:
+    connectionRef:
+      name: cluster-default
+    temporalNamespace: default
+  rollout:
+    strategy: Progressive
+    steps:
+      - rampPercentage: 25
+        pauseDuration: 30s
+      - rampPercentage: 75
+        pauseDuration: 30s
+  sunset: {}
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: valet-worker
+          image: valet-worker:v1
+          imagePullPolicy: IfNotPresent
