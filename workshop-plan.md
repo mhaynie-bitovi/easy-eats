@@ -1,13 +1,52 @@
-# Learning Objectives
+# Workshop Plan
 
-## From replay workshop description
+## Format Plan (3.5 hrs)
+
+* 3 30-minute exercises (via instruqt)
+* 1 30-minute break (3:00 - 3:30)
+* Content/slides between
+
+## Content Plan
+
+* Modeled on the learning objectives of the Workflow/Worker Versioning Courses (LMS)
+* Targeting intermediate/expert temporal devs
+* Focus mostly on worker-versioning, but cover/review patching - it's still a critical skill with auto-upgrade behavior
+* Called out areas of interest:
+    * workflow replay testing
+    * patching workflows with auto-upgrade behavior
+    * pinned workflows (vs auto-upgrade)
+    * Upgrade-on-Continue-as-New strategy ("trampolining")
+    * emergency remediation techniques
+    * worker controller
+
+## Exercise Plan (via Instruqt)
+
+Three exercises, each broken into multiple parts.
+
+1. patching an NDE + doing a replay test
+2. deploying changes with worker versioning
+3. deploying on k8s with the worker controller
+
+### Other Exercise Goals
+- Continuity, changes should build on one another and keep example easy to grok and remember.
+- It might be nice to sprinkle the different emergency remidiation techniques through all the exercises as a recurring topic.
+- Each exercise should stand alone in it's own folder in the code repository.
+- Each exercise should have a `practice` and `solution` folder. the practice one will be where they user makes their changes during the exercises. the solution is there to reference in case they want a hint. the solution is also the starting point for the subsequent exercise.
+
+### Ideas For Changes to Make During Exercises
+  - sending a notification to the customer when retrieving car
+  - billing the customer at the end based on the length of their trip
+
+## Learning Objectives
+
+### From replay workshop description
   - deployment practices
   - worker routing
   - emergency remediation techniques
 
-## From lms courses
+### From lms courses
 
-### Workflow Versioning
+#### Workflow Versioning
 - Apply an appropriate Versioning strategy to modify your Workflows
   - Understand which types of changes can safely be deployed without versioning
   - Explain how to define and use versioning to support incompatible changes to a Workflow
@@ -22,7 +61,7 @@
   - Make changes in production and gracefully update your Executions
   - Test compatibility with past Executions and previous Versions using Workflow Replay
 
-### Worker Versioning
+#### Worker Versioning
 - Understand Worker Versioning Architecture and Deployment Strategies
   - Distinguish between Worker Deployments and Worker Deployment Versions in your application architecture
   - Explain the differences between rainbow, blue-green, and rolling deployment strategies and justify why Worker Versioning uses the rainbow approach for Temporal applications
