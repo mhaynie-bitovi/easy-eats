@@ -14,14 +14,14 @@ from valet.models import (
     MoveCarOutput,
     NotifyOwnerInput,
     NotifyOwnerOutput,
-    ReleaseSpaceInput,
-    ReleaseSpaceOutput,
-    RequestSpaceInput,
-    RequestSpaceOutput,
+    ReleaseParkingSpaceInput,
+    ReleaseParkingSpaceOutput,
+    RequestParkingSpaceInput,
+    RequestParkingSpaceOutput,
     ValetParkingInput,
     ValetParkingOutput,
 )
-from valet.valet_workflow import ValetParkingWorkflow
+from valet.valet_parking_workflow import ValetParkingWorkflow
 
 
 @activity.defn(name="move_car")
@@ -29,14 +29,14 @@ async def mock_move_car(input: MoveCarInput) -> MoveCarOutput:
     return MoveCarOutput(distance_driven=1.0, start_time="t0", end_time="t1")
 
 
-@activity.defn(name="request_space")
-async def mock_request_space(input: RequestSpaceInput) -> RequestSpaceOutput:
-    return RequestSpaceOutput(space_number="42")
+@activity.defn(name="request_parking_space")
+async def mock_request_space(input: RequestParkingSpaceInput) -> RequestParkingSpaceOutput:
+    return RequestParkingSpaceOutput(parking_space_number="42")
 
 
-@activity.defn(name="release_space")
-async def mock_release_space(input: ReleaseSpaceInput) -> ReleaseSpaceOutput:
-    return ReleaseSpaceOutput()
+@activity.defn(name="release_parking_space")
+async def mock_release_space(input: ReleaseParkingSpaceInput) -> ReleaseParkingSpaceOutput:
+    return ReleaseParkingSpaceOutput()
 
 
 @activity.defn(name="notify_owner")

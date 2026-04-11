@@ -8,8 +8,8 @@ with workflow.unsafe.imports_passed_through():
         bill_customer,
         move_car,
         notify_owner,
-        release_space,
-        request_space,
+        release_parking_space,
+        request_parking_space,
     )
     from valet.models import (
         BillCustomerInput,
@@ -17,8 +17,8 @@ with workflow.unsafe.imports_passed_through():
         LocationKind,
         MoveCarInput,
         NotifyOwnerInput,
-        ReleaseSpaceInput,
-        RequestSpaceInput,
+        ReleaseParkingSpaceInput,
+        RequestParkingSpaceInput,
         ValetParkingInput,
         ValetParkingOutput,
     )
@@ -34,14 +34,14 @@ class ValetParkingWorkflow:
         )
 
         # Request a parking space
-        space_result = await workflow.execute_activity(
-            request_space,
-            RequestSpaceInput(license_plate=input.license_plate),
+        parking_space_result = await workflow.execute_activity(
+            request_parking_space,
+            RequestParkingSpaceInput(license_plate=input.license_plate),
             start_to_close_timeout=timedelta(seconds=10),
         )
 
-        assigned_space = Location(
-            kind=LocationKind.PARKING_SPACE, id=space_result.space_number
+        assigned_parking_space = Location(
+            kind=LocationKind.PARKING_SPACE, id=parking_space_result.parking_space_number
         )
 
         # Notify the owner their car is being parked
@@ -55,18 +55,18 @@ class ValetParkingWorkflow:
         )
 
         # Move car from valet zone to assigned parking space
-        move_to_space_result = await workflow.execute_activity(
+        move_to_parking_space_result = await workflow.execute_activity(
             move_car,
             MoveCarInput(
                 license_plate=input.license_plate,
                 from_location=input.valet_zone_location,
-                to_location=assigned_space,
+                to_location=assigned_parking_space,
             ),
             start_to_close_timeout=timedelta(seconds=10),
         )
 
         workflow.logger.info(
-            f"Car {input.license_plate} parked in space {space_result.space_number}. "
+            f"Car {input.license_plate} parked in parking space {parking_space_result.parking_space_number}. "
             f"Waiting {input.trip_duration_seconds}s for owner's trip."
         )
 
@@ -78,7 +78,7 @@ class ValetParkingWorkflow:
             move_car,
             MoveCarInput(
                 license_plate=input.license_plate,
-                from_location=assigned_space,
+                from_location=assigned_parking_space,
                 to_location=input.valet_zone_location,
             ),
             start_to_close_timeout=timedelta(seconds=10),
@@ -86,8 +86,8 @@ class ValetParkingWorkflow:
 
         # Release the parking space
         await workflow.execute_activity(
-            release_space,
-            ReleaseSpaceInput(license_plate=input.license_plate),
+            release_parking_space,
+            ReleaseParkingSpaceInput(license_plate=input.license_plate),
             start_to_close_timeout=timedelta(seconds=10),
         )
 
@@ -98,7 +98,7 @@ class ValetParkingWorkflow:
                 license_plate=input.license_plate,
                 duration_seconds=input.trip_duration_seconds,
                 total_distance=(
-                    move_to_space_result.distance_driven
+                    move_to_parking_space_result.distance_driven
                     + move_to_valet_result.distance_driven
                 ),
             ),

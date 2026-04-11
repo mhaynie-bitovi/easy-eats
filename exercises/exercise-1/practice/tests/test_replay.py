@@ -2,7 +2,7 @@ import pytest
 from temporalio.client import WorkflowHistory
 from temporalio.worker import Replayer
 
-from valet.valet_workflow import ValetParkingWorkflow
+from valet.valet_parking_workflow import ValetParkingWorkflow
 
 
 @pytest.mark.asyncio

@@ -6,8 +6,6 @@ from temporalio.testing import WorkflowEnvironment
 from temporalio.worker import Worker
 
 from valet.models import (
-    BillCustomerInput,
-    BillCustomerOutput,
     Location,
     LocationKind,
     MoveCarInput,
@@ -30,23 +28,18 @@ async def mock_move_car(input: MoveCarInput) -> MoveCarOutput:
 
 
 @activity.defn(name="request_parking_space")
-async def mock_request_space(input: RequestParkingSpaceInput) -> RequestParkingSpaceOutput:
+async def mock_request_parking_space(input: RequestParkingSpaceInput) -> RequestParkingSpaceOutput:
     return RequestParkingSpaceOutput(parking_space_number="42")
 
 
 @activity.defn(name="release_parking_space")
-async def mock_release_space(input: ReleaseParkingSpaceInput) -> ReleaseParkingSpaceOutput:
+async def mock_release_parking_space(input: ReleaseParkingSpaceInput) -> ReleaseParkingSpaceOutput:
     return ReleaseParkingSpaceOutput()
 
 
 @activity.defn(name="notify_owner")
 async def mock_notify_owner(input: NotifyOwnerInput) -> NotifyOwnerOutput:
     return NotifyOwnerOutput(notified=True)
-
-
-@activity.defn(name="bill_customer")
-async def mock_bill_customer(input: BillCustomerInput) -> BillCustomerOutput:
-    return BillCustomerOutput(amount=10.50)
 
 
 @pytest.mark.asyncio
@@ -60,10 +53,9 @@ async def test_valet_parking_workflow():
             workflows=[ValetParkingWorkflow],
             activities=[
                 mock_move_car,
-                mock_request_space,
-                mock_release_space,
+                mock_request_parking_space,
+                mock_release_parking_space,
                 mock_notify_owner,
-                mock_bill_customer,
             ],
         ):
             result = await env.client.execute_workflow(
@@ -79,4 +71,4 @@ async def test_valet_parking_workflow():
                 task_queue=task_queue_name,
             )
 
-            assert result == ValetParkingOutput(total_bill=10.50)
+            assert result == ValetParkingOutput()

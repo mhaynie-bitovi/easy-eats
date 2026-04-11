@@ -10,7 +10,7 @@ from valet.models import (
     ValetParkingInput,
 )
 from valet.utils import generate_license_plate
-from valet.valet_workflow import ValetParkingWorkflow
+from valet.valet_parking_workflow import ValetParkingWorkflow
 
 
 async def main() -> None:

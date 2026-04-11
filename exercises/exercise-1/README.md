@@ -14,8 +14,8 @@
 cd exercises/exercise-1/practice
 ```
 
-2. Examine the V1 `ValetParkingWorkflow` in `valet/valet_workflow.py`. Note the command sequence:
-   - `request_space` → `move_car` (to space) → `sleep` → `move_car` (back) → `release_space`
+2. Examine the V1 `ValetParkingWorkflow` in `valet/valet_parking_workflow.py`. Note the command sequence:
+   - `request_parking_space` → `move_car` (to parking space) → `sleep` → `move_car` (back) → `release_parking_space`
    - The `sleep` simulates the owner's trip — workflows will be "in flight" during this window.
 
 3. Start the Temporal dev server (in a **dedicated terminal**):
@@ -62,10 +62,10 @@ make test
 
 Product wants us to send the car owner a notification when their car is about to be parked. A `notify_owner` activity and its models (`NotifyOwnerInput`, `NotifyOwnerOutput`) are already defined in `valet/activities.py` and `valet/models.py`. Your job is to call it from the workflow.
 
-1. Insert the activity call into `valet/valet_workflow.py` **after** `request_space` and **before** the first `move_car`:
+1. Insert the activity call into `valet/valet_parking_workflow.py` **after** `request_parking_space` and **before** the first `move_car`:
 
 ```python
-# After request_space, before move_car:
+# After request_parking_space, before move_car:
 await workflow.execute_activity(
     notify_owner,
     NotifyOwnerInput(
@@ -84,7 +84,7 @@ await workflow.execute_activity(
 make test
 ```
 
-> **This is the "aha" moment.** The old workflow history doesn't have a `notify_owner` command after `request_space`, but the new code expects one. The command sequence doesn't match → non-determinism error.
+> **This is the "aha" moment.** The old workflow history doesn't have a `notify_owner` command after `request_parking_space`, but the new code expects one. The command sequence doesn't match → non-determinism error.
 
 ---
 
@@ -144,7 +144,7 @@ make starter
 
    Note this workflow ID — this is your **post-patch workflow**.
 
-5. Watch this second workflow in the Temporal Web UI. It **includes** `notify_owner` right after `request_space` — `workflow.patched()` returned `True` during live execution and wrote a marker event into the history.
+5. Watch this second workflow in the Temporal Web UI. It **includes** `notify_owner` right after `request_parking_space` — `workflow.patched()` returned `True` during live execution and wrote a marker event into the history.
 
 6. Stop the worker when you're satisfied (Ctrl+C).
 

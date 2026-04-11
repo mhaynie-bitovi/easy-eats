@@ -13,10 +13,10 @@ from valet.models import (
     NotifyOwnerInput,
     NotifyOwnerOutput,
     ParkingLotInput,
-    ReleaseSpaceInput,
-    ReleaseSpaceOutput,
-    RequestSpaceInput,
-    RequestSpaceOutput,
+    ReleaseParkingSpaceInput,
+    ReleaseParkingSpaceOutput,
+    RequestParkingSpaceInput,
+    RequestParkingSpaceOutput,
 )
 from valet.parking_lot_workflow import ParkingLotWorkflow
 
@@ -46,43 +46,43 @@ async def move_car(input: MoveCarInput) -> MoveCarOutput:
 
 
 @activity.defn
-async def request_space(input: RequestSpaceInput) -> RequestSpaceOutput:
+async def request_parking_space(input: RequestParkingSpaceInput) -> RequestParkingSpaceOutput:
     temporal_address = os.environ.get("TEMPORAL_ADDRESS", "localhost:7233")
     temporal_namespace = os.environ.get("TEMPORAL_NAMESPACE", "default")
     client = await Client.connect(temporal_address, namespace=temporal_namespace)
     start_op = WithStartWorkflowOperation(
         ParkingLotWorkflow.run,
-        ParkingLotInput(spaces=None),
+        ParkingLotInput(parking_spaces=None),
         id="parking-lot",
         task_queue="valet",
         id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
-    space_number = await client.execute_update_with_start_workflow(
-        ParkingLotWorkflow.request_space,
+    parking_space_number = await client.execute_update_with_start_workflow(
+        ParkingLotWorkflow.request_parking_space,
         input.license_plate,
         start_workflow_operation=start_op,
     )
-    return RequestSpaceOutput(space_number=space_number)
+    return RequestParkingSpaceOutput(parking_space_number=parking_space_number)
 
 
 @activity.defn
-async def release_space(input: ReleaseSpaceInput) -> ReleaseSpaceOutput:
+async def release_parking_space(input: ReleaseParkingSpaceInput) -> ReleaseParkingSpaceOutput:
     temporal_address = os.environ.get("TEMPORAL_ADDRESS", "localhost:7233")
     temporal_namespace = os.environ.get("TEMPORAL_NAMESPACE", "default")
     client = await Client.connect(temporal_address, namespace=temporal_namespace)
     start_op = WithStartWorkflowOperation(
         ParkingLotWorkflow.run,
-        ParkingLotInput(spaces=None),
+        ParkingLotInput(parking_spaces=None),
         id="parking-lot",
         task_queue="valet",
         id_conflict_policy=WorkflowIDConflictPolicy.USE_EXISTING,
     )
     await client.execute_update_with_start_workflow(
-        ParkingLotWorkflow.release_space,
+        ParkingLotWorkflow.release_parking_space,
         input.license_plate,
         start_workflow_operation=start_op,
     )
-    return ReleaseSpaceOutput()
+    return ReleaseParkingSpaceOutput()
 
 
 @activity.defn
@@ -90,6 +90,4 @@ async def notify_owner(input: NotifyOwnerInput) -> NotifyOwnerOutput:
     activity.logger.info(
         f"Notifying owner of {input.license_plate}: {input.message}"
     )
-    # Simulate notification delay
-    await asyncio.sleep(0.5)
     return NotifyOwnerOutput(notified=True)

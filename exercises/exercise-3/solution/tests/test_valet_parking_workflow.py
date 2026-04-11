@@ -30,12 +30,12 @@ async def mock_move_car(input: MoveCarInput) -> MoveCarOutput:
 
 
 @activity.defn(name="request_parking_space")
-async def mock_request_space(input: RequestParkingSpaceInput) -> RequestParkingSpaceOutput:
+async def mock_request_parking_space(input: RequestParkingSpaceInput) -> RequestParkingSpaceOutput:
     return RequestParkingSpaceOutput(parking_space_number="42")
 
 
 @activity.defn(name="release_parking_space")
-async def mock_release_space(input: ReleaseParkingSpaceInput) -> ReleaseParkingSpaceOutput:
+async def mock_release_parking_space(input: ReleaseParkingSpaceInput) -> ReleaseParkingSpaceOutput:
     return ReleaseParkingSpaceOutput()
 
 
@@ -60,8 +60,8 @@ async def test_valet_parking_workflow():
             workflows=[ValetParkingWorkflow],
             activities=[
                 mock_move_car,
-                mock_request_space,
-                mock_release_space,
+                mock_request_parking_space,
+                mock_release_parking_space,
                 mock_notify_owner,
                 mock_bill_customer,
             ],

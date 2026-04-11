@@ -64,11 +64,12 @@ class ValetParkingWorkflow:
         )
 
         workflow.logger.info(
-            f"Car {input.license_plate} parked in parking space {parking_space_result.parking_space_number}. "
-            f"Waiting {input.trip_duration_seconds}s for owner's trip."
+            f"Car {input.license_plate} parked in parking space {parking_space_result.parking_space_number}."
         )
 
-        # Wait for the owner's trip
+        # In production, this wait would be replaced by a Signal from the car owner
+        # indicating they're ready for their car to be retrieved.
+        # Here we simulate the owner's trip with a hardcoded timer.
         await workflow.sleep(input.trip_duration_seconds)
 
         # Move car from parking space back to the original valet zone

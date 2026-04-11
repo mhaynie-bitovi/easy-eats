@@ -10,11 +10,11 @@ from valet.activities import (
     bill_customer,
     move_car,
     notify_owner,
-    release_space,
-    request_space,
+    release_parking_space,
+    request_parking_space,
 )
 from valet.parking_lot_workflow import ParkingLotWorkflow
-from valet.valet_workflow import ValetParkingWorkflow
+from valet.valet_parking_workflow import ValetParkingWorkflow
 
 
 async def main():
@@ -44,7 +44,7 @@ async def main():
         client,
         task_queue="valet",
         workflows=[ValetParkingWorkflow, ParkingLotWorkflow],
-        activities=[move_car, request_space, release_space, notify_owner, bill_customer],
+        activities=[move_car, request_parking_space, release_parking_space, notify_owner, bill_customer],
         deployment_config=deployment_config,
     )
 

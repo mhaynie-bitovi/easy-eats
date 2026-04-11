@@ -5,19 +5,19 @@ from temporalio import workflow
 with workflow.unsafe.imports_passed_through():
     from valet.activities import (
         move_car,
-        notify_owner,
         release_parking_space,
         request_parking_space,
+        notify_owner
     )
     from valet.models import (
         Location,
         LocationKind,
         MoveCarInput,
-        NotifyOwnerInput,
         ReleaseParkingSpaceInput,
         RequestParkingSpaceInput,
         ValetParkingInput,
         ValetParkingOutput,
+        NotifyOwnerInput
     )
 
 
@@ -41,7 +41,13 @@ class ValetParkingWorkflow:
             kind=LocationKind.PARKING_SPACE, id=parking_space_result.parking_space_number
         )
 
-        # Notify the owner their car is being parked
+        # TODO(Part C.1): Wrap the notify_owner call with:
+        #   if workflow.patched("add-notify-owner"):
+
+        # TODO(Part B.1): Add notify_owner activity call here.
+        #   Call workflow.execute_activity() with notify_owner and NotifyOwnerInput.
+        #   Don't forget to add notify_owner and NotifyOwnerInput to the imports above.
+        # Notify the owner their car has been parked
         if workflow.patched("add-notify-owner"):
             await workflow.execute_activity(
                 notify_owner,
@@ -51,6 +57,7 @@ class ValetParkingWorkflow:
                 ),
                 start_to_close_timeout=timedelta(seconds=10),
             )
+
 
         # Move car from valet zone to assigned parking space
         await workflow.execute_activity(
@@ -64,11 +71,12 @@ class ValetParkingWorkflow:
         )
 
         workflow.logger.info(
-            f"Car {input.license_plate} parked in parking space {parking_space_result.parking_space_number}. "
-            f"Waiting {input.trip_duration_seconds}s for owner's trip."
+            f"Car {input.license_plate} parked in parking space {parking_space_result.parking_space_number}."
         )
 
-        # Wait for the owner's trip
+        # In production, this wait would be replaced by a Signal from the car owner
+        # indicating they're ready for their car to be retrieved.
+        # Here we simulate the owner's trip with a hardcoded timer.
         await workflow.sleep(input.trip_duration_seconds)
 
         # Move car from parking space back to the original valet zone

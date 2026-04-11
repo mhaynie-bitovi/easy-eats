@@ -43,28 +43,28 @@ class MoveCarOutput:
 
 
 @dataclass
-class RequestSpaceInput:
+class RequestParkingSpaceInput:
     license_plate: str
 
 
 @dataclass
-class RequestSpaceOutput:
-    space_number: str
+class RequestParkingSpaceOutput:
+    parking_space_number: str
 
 
 @dataclass
-class ReleaseSpaceInput:
+class ReleaseParkingSpaceInput:
     license_plate: str
 
 
 @dataclass
-class ReleaseSpaceOutput:
+class ReleaseParkingSpaceOutput:
     pass
 
 
 @dataclass
 class ParkingLotInput:
-    spaces: dict[str, str | None] | None
+    parking_spaces: dict[str, str | None] | None
 
 
 @dataclass

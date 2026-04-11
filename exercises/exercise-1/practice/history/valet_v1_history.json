@@ -94,7 +94,7 @@
       "activityTaskScheduledEventAttributes": {
         "activityId": "1",
         "activityType": {
-          "name": "request_space"
+          "name": "request_parking_space"
         },
         "taskQueue": {
           "name": "valet",
@@ -524,7 +524,7 @@
       "activityTaskScheduledEventAttributes": {
         "activityId": "4",
         "activityType": {
-          "name": "release_space"
+          "name": "release_parking_space"
         },
         "taskQueue": {
           "name": "valet",

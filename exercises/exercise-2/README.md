@@ -27,7 +27,7 @@ make load
 
    **a.** Add `versioning_behavior` to both workflows.
 
-   In `valet/valet_workflow.py`:
+   In `valet/valet_parking_workflow.py`:
    ```python
    from temporalio.common import VersioningBehavior
 
@@ -148,13 +148,13 @@ temporal worker deployment set-current \
        return BillCustomerOutput(amount=amount)
    ```
 
-   **Workflow** (`valet/valet_workflow.py`) — capture move_car results and add billing at the end:
+   **Workflow** (`valet/valet_parking_workflow.py`) — capture move_car results and add billing at the end:
    ```python
    # ... (notify_owner) ...
-   move_to_space_result = await workflow.execute_activity(move_car, ...)
+   move_to_parking_space_result = await workflow.execute_activity(move_car, ...)
    # ... (sleep) ...
    move_to_valet_result = await workflow.execute_activity(move_car, ...)
-   # ... (release_space) ...
+   # ... (release_parking_space) ...
 
    bill_result = await workflow.execute_activity(
        bill_customer,
@@ -162,7 +162,7 @@ temporal worker deployment set-current \
            license_plate=input.license_plate,
            duration_seconds=input.trip_duration_seconds,
            total_distance=(
-               move_to_space_result.distance_driven
+               move_to_parking_space_result.distance_driven
                + move_to_valet_result.distance_driven
            ),
        ),

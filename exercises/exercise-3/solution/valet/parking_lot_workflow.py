@@ -10,43 +10,43 @@ with workflow.unsafe.imports_passed_through():
 class ParkingLotWorkflow:
 
     def __init__(self) -> None:
-        self.spaces: dict[str, str | None] = {
+        self.parking_spaces: dict[str, str | None] = {
             str(i): None for i in range(1, 31)
         }
         self._should_continue_as_new = False
 
     @workflow.run
     async def run(self, input: ParkingLotInput) -> ParkingLotOutput:
-        self.spaces = input.spaces or self.spaces
+        self.parking_spaces = input.parking_spaces or self.parking_spaces
 
         await workflow.wait_condition(lambda: self._should_continue_as_new)
-        workflow.continue_as_new(ParkingLotInput(spaces=self.spaces))
+        workflow.continue_as_new(ParkingLotInput(parking_spaces=self.parking_spaces))
 
     @workflow.update
-    async def request_space(self, plate: str) -> str:
-        for space, occupant in self.spaces.items():
+    async def request_parking_space(self, plate: str) -> str:
+        for parking_space, occupant in self.parking_spaces.items():
             if occupant is None:
-                self.spaces[space] = plate
-                workflow.logger.info(f"Assigned space {space} to {plate}")
+                self.parking_spaces[parking_space] = plate
+                workflow.logger.info(f"Assigned parking space {parking_space} to {plate}")
                 self._check_continue_as_new()
-                return space
+                return parking_space
 
         raise ApplicationError("Parking lot is full")
 
     @workflow.update
-    async def release_space(self, plate: str) -> None:
-        for space, occupant in self.spaces.items():
+    async def release_parking_space(self, plate: str) -> None:
+        for parking_space, occupant in self.parking_spaces.items():
             if occupant == plate:
-                self.spaces[space] = None
-                workflow.logger.info(f"Released space {space} from {plate}")
+                self.parking_spaces[parking_space] = None
+                workflow.logger.info(f"Released parking space {parking_space} from {plate}")
                 self._check_continue_as_new()
                 return
 
-        raise ApplicationError(f"No space found for plate {plate}")
+        raise ApplicationError(f"No parking space found for plate {plate}")
 
     @workflow.query
     def get_status(self) -> dict[str, str | None]:
-        return self.spaces
+        return self.parking_spaces
 
     def _check_continue_as_new(self) -> None:
         if (
