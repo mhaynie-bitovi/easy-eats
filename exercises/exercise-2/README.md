@@ -14,14 +14,19 @@
 cd exercises/exercise-2/practice
 ```
 
-2. Start the **unversioned** V1 worker and the load simulator:
+2. Start the **unversioned** V1 worker:
 
 ```bash
-make worker &
+make worker
+```
+
+3. In a new terminal, start the load simulator:
+
+```bash
 make load
 ```
 
-   Let several workflows start. Then **stop** the V1 worker and the load simulator.
+   Let several workflows start. Then **stop** both the worker and the load simulator (Ctrl+C in each terminal).
 
 3. **Configure worker versioning.** Make three changes:
 

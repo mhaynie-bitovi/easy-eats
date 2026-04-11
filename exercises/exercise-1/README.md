@@ -29,7 +29,7 @@ temporal server start-dev
 4. Start the worker (in a **new terminal** from the same directory):
 
 ```bash
-make worker
+make start-worker
 ```
 
 > **Note:** Keep this worker running — you'll be instructed when to restart it later.
@@ -131,7 +131,7 @@ make starter
 2. **Stop the old worker** (Ctrl+C) and restart it with the patched code:
 
 ```bash
-make worker
+make start-worker
 ```
 
 3. Watch the first workflow complete in the Temporal Web UI at [http://localhost:8233](http://localhost:8233). It completes **without** `notify_owner` — `workflow.patched()` returned `False` during replay (no marker in the history) and skipped the notification block.

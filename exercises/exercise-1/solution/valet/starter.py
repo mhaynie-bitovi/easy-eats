@@ -24,8 +24,8 @@ async def main() -> None:
         id=str(random.randint(1, NUM_VALET_ZONES)),
     )
 
-    workflow_id = f"valet-{license_plate}" 
-    result = await client.start_workflow(
+    workflow_id = f"valet-{license_plate}"
+    await client.start_workflow(
         ValetParkingWorkflow.run,
         ValetParkingInput(
             license_plate=license_plate,

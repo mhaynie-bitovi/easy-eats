@@ -1,8 +1,8 @@
 PYTHON ?= ../../../env/bin/python
 
-.PHONY: worker load starter test
+.PHONY: start-worker load starter test
 
-worker:
+start-worker:
 	PYTHONPATH=. exec $(PYTHON) -m valet.worker
 
 load:
