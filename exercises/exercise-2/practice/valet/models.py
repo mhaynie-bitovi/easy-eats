@@ -24,8 +24,7 @@ class ValetParkingInput:
 
 @dataclass
 class ValetParkingOutput:
-    # TODO(Part B.1): Add total_bill field: total_bill: float | None = None
-    pass
+    total_bill: float | None = None
 
 
 @dataclass
@@ -82,6 +81,14 @@ class NotifyOwnerInput:
 class NotifyOwnerOutput:
     notified: bool
 
-# TODO(Part B.1): Add BillCustomerInput and BillCustomerOutput dataclasses here.
-#   BillCustomerInput: license_plate (str), duration_seconds (int), total_distance (float)
-#   BillCustomerOutput: amount (float)
+
+@dataclass
+class BillCustomerInput:
+    license_plate: str
+    duration_seconds: int
+    total_distance: float
+
+
+@dataclass
+class BillCustomerOutput:
+    amount: float

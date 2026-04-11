@@ -1,14 +1,14 @@
 from temporalio import workflow
 from temporalio.exceptions import ApplicationError
 
-# TODO(Part A.3a): Import VersioningBehavior:
+# TODO(Part A): Import VersioningBehavior:
 #   from temporalio.common import VersioningBehavior
 
 with workflow.unsafe.imports_passed_through():
     from valet.models import ParkingLotInput, ParkingLotOutput
 
 
-# TODO(Part A.3a): Add versioning_behavior=VersioningBehavior.AUTO_UPGRADE to @workflow.defn
+# TODO(Part A): Add versioning_behavior=VersioningBehavior.PINNED to @workflow.defn
 @workflow.defn
 class ParkingLotWorkflow:
 
@@ -23,6 +23,12 @@ class ParkingLotWorkflow:
         self.parking_spaces = input.parking_spaces or self.parking_spaces
 
         await workflow.wait_condition(lambda: self._should_continue_as_new)
+
+        # TODO(Part D): Add a 1-second drain delay before continue-as-new
+        #   to allow in-flight updates to complete:
+        #   await workflow.sleep(timedelta(seconds=1))
+        #   (Don't forget to import timedelta at the top of the file.)
+
         workflow.continue_as_new(ParkingLotInput(parking_spaces=self.parking_spaces))
 
     @workflow.update

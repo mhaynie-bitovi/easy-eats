@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from temporalio import workflow
 
-# TODO(Part A.3a): Import VersioningBehavior:
+# TODO(Part A): Import VersioningBehavior:
 #   from temporalio.common import VersioningBehavior
 
 with workflow.unsafe.imports_passed_through():
@@ -11,8 +11,10 @@ with workflow.unsafe.imports_passed_through():
         notify_owner,
         release_parking_space,
         request_parking_space,
+        # TODO(Part B): Import bill_customer
     )
     from valet.models import (
+        # TODO(Part B): Import BillCustomerInput
         Location,
         LocationKind,
         MoveCarInput,
@@ -24,8 +26,7 @@ with workflow.unsafe.imports_passed_through():
     )
 
 
-# TODO(Part A.3a): Add versioning_behavior=VersioningBehavior.AUTO_UPGRADE to @workflow.defn
-# TODO(Part B.2): Change to versioning_behavior=VersioningBehavior.PINNED
+# TODO(Part A): Add versioning_behavior=VersioningBehavior.PINNED to @workflow.defn
 @workflow.defn
 class ValetParkingWorkflow:
 
@@ -47,6 +48,10 @@ class ValetParkingWorkflow:
         )
 
         # Notify the owner their car is being parked
+        # TODO(Part B): Remove the workflow.patched() guard below.
+        #   With PINNED versioning, old workflows complete on old code and never
+        #   replay on new code, so the patch is no longer needed. Just call the
+        #   activity unconditionally.
         if workflow.patched("add-notify-owner"):
             await workflow.execute_activity(
                 notify_owner,
@@ -58,7 +63,7 @@ class ValetParkingWorkflow:
             )
 
         # Move car from valet zone to assigned parking space
-        # TODO(Part B.1): Capture the result: move_to_parking_space_result = await ...
+        # TODO(Part B): Capture the result: move_to_parking_space_result = await ...
         await workflow.execute_activity(
             move_car,
             MoveCarInput(
@@ -79,7 +84,7 @@ class ValetParkingWorkflow:
         await workflow.sleep(input.trip_duration_seconds)
 
         # Move car from parking space back to the original valet zone
-        # TODO(Part B.1): Capture the result: move_to_valet_result = await ...
+        # TODO(Part B): Capture the result: move_to_valet_result = await ...
         await workflow.execute_activity(
             move_car,
             MoveCarInput(
@@ -101,10 +106,19 @@ class ValetParkingWorkflow:
             f"Car {input.license_plate} returned to valet zone {input.valet_zone_location.id}."
         )
 
-        # TODO(Part B.1): Add bill_customer activity call here.
-        #   Call workflow.execute_activity() with bill_customer and BillCustomerInput.
-        #   Use move_to_parking_space_result.distance_driven + move_to_valet_result.distance_driven
-        #   for total_distance. Return ValetParkingOutput(total_bill=bill_result.amount).
-        #   Don't forget to add bill_customer and BillCustomerInput to the imports above.
+        # TODO(Part B): Add bill_customer activity call here.
+        #   bill_result = await workflow.execute_activity(
+        #       bill_customer,
+        #       BillCustomerInput(
+        #           license_plate=input.license_plate,
+        #           duration_seconds=input.trip_duration_seconds,
+        #           total_distance=(
+        #               move_to_parking_space_result.distance_driven
+        #               + move_to_valet_result.distance_driven
+        #           ),
+        #       ),
+        #       start_to_close_timeout=timedelta(seconds=10),
+        #   )
+        #   Then return: ValetParkingOutput(total_bill=bill_result.amount)
 
         return ValetParkingOutput()

@@ -22,10 +22,11 @@ async def main():
 
     temporal_address = os.environ.get("TEMPORAL_ADDRESS", "localhost:7233")
     temporal_namespace = os.environ.get("TEMPORAL_NAMESPACE", "default")
-    deployment_name = os.environ.get("TEMPORAL_DEPLOYMENT_NAME")
-    build_id = os.environ.get("TEMPORAL_WORKER_BUILD_ID")
 
     client = await Client.connect(temporal_address, namespace=temporal_namespace)
+
+    deployment_name = os.environ.get("TEMPORAL_DEPLOYMENT_NAME")
+    build_id = os.environ.get("TEMPORAL_WORKER_BUILD_ID")
 
     deployment_config = None
     if deployment_name and build_id:
@@ -35,9 +36,6 @@ async def main():
                 build_id=build_id,
             ),
             use_worker_versioning=True,
-        )
-        print(
-            f"Worker versioning enabled: deployment={deployment_name}, build_id={build_id}"
         )
 
     worker = Worker(

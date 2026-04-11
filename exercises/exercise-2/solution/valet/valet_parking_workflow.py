@@ -107,8 +107,7 @@ class ValetParkingWorkflow:
         )
 
         workflow.logger.info(
-            f"Car {input.license_plate} returned to valet zone {input.valet_zone_location.id}. "
-            f"Total bill: ${bill_result.amount}"
+            f"Car {input.license_plate} returned to valet zone {input.valet_zone_location.id}."
         )
 
         return ValetParkingOutput(total_bill=bill_result.amount)

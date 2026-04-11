@@ -5,11 +5,13 @@ import os
 from temporalio.client import Client
 from temporalio.worker import Worker
 
-# TODO(Part A.3b): Import WorkerDeploymentVersion and WorkerDeploymentConfig:
+# TODO(Part A): Import WorkerDeploymentVersion and WorkerDeploymentConfig:
 #   from temporalio.common import WorkerDeploymentVersion
-#   from temporalio.worker import Worker, WorkerDeploymentConfig
+#   from temporalio.worker import WorkerDeploymentConfig
+#   (You can add WorkerDeploymentConfig to the existing Worker import above.)
 
 from valet.activities import (
+    bill_customer,
     move_car,
     notify_owner,
     release_parking_space,
@@ -27,17 +29,28 @@ async def main():
 
     client = await Client.connect(temporal_address, namespace=temporal_namespace)
 
-    # TODO(Part A.3b): Add WorkerDeploymentConfig here.
-    #   Read TEMPORAL_DEPLOYMENT_NAME and TEMPORAL_WORKER_BUILD_ID from env vars.
-    #   If both are set, create a WorkerDeploymentConfig with a WorkerDeploymentVersion
-    #   and use_worker_versioning=True. Pass it as deployment_config= to the Worker below.
+    # TODO(Part A): Read TEMPORAL_DEPLOYMENT_NAME and TEMPORAL_WORKER_BUILD_ID from env vars.
+    #   If both are set, create a WorkerDeploymentConfig and pass it to the Worker below.
+    #
+    #   deployment_name = os.environ.get("TEMPORAL_DEPLOYMENT_NAME")
+    #   build_id = os.environ.get("TEMPORAL_WORKER_BUILD_ID")
+    #
+    #   deployment_config = None
+    #   if deployment_name and build_id:
+    #       deployment_config = WorkerDeploymentConfig(
+    #           version=WorkerDeploymentVersion(
+    #               deployment_name=deployment_name,
+    #               build_id=build_id,
+    #           ),
+    #           use_worker_versioning=True,
+    #       )
 
     worker = Worker(
         client,
         task_queue="valet",
         workflows=[ValetParkingWorkflow, ParkingLotWorkflow],
-        # TODO(Part B.1): Add bill_customer to this activities list.
-        activities=[move_car, request_parking_space, release_parking_space, notify_owner],
+        activities=[move_car, request_parking_space, release_parking_space, notify_owner, bill_customer],
+        # TODO(Part A): Add deployment_config=deployment_config here.
     )
 
     print("Worker running ...")

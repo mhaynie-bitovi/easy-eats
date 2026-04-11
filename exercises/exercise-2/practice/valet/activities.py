@@ -8,6 +8,8 @@ from temporalio.client import Client, WithStartWorkflowOperation
 from temporalio.common import WorkflowIDConflictPolicy
 
 from valet.models import (
+    BillCustomerInput,
+    BillCustomerOutput,
     MoveCarInput,
     MoveCarOutput,
     NotifyOwnerInput,
@@ -93,7 +95,14 @@ async def notify_owner(input: NotifyOwnerInput) -> NotifyOwnerOutput:
     return NotifyOwnerOutput(notified=True)
 
 
-# TODO(Part B.1): Add a bill_customer activity here.
-#   Formula: $5 base + $0.50/min + $2/mile
-#   Return BillCustomerOutput(amount=...).
-#   Don't forget to add BillCustomerInput and BillCustomerOutput to the imports above.
+@activity.defn
+async def bill_customer(input: BillCustomerInput) -> BillCustomerOutput:
+    # Simple billing: $5 base + $0.50 per minute + $2 per mile
+    minutes = input.duration_seconds / 60
+    amount = 5.0 + (0.50 * minutes) + (2.0 * input.total_distance)
+    amount = round(amount, 2)
+    activity.logger.info(
+        f"Billing {input.license_plate}: ${amount} "
+        f"({minutes:.1f} min, {input.total_distance:.1f} mi)"
+    )
+    return BillCustomerOutput(amount=amount)

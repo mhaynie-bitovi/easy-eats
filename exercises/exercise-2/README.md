@@ -1,12 +1,26 @@
-# Exercise 2: Deploying Changes with Worker Versioning
+# Exercise 2: Worker Versioning
 
-**Time:** ~30 minutes
-**Theme:** Deploy the patched notify_owner change, then a larger structural change, using worker versioning CLI commands.
-**Skills:** Build IDs, deployment versions, auto-upgrade behavior, pinned versions, trampolining via continue-as-new
+**Time:** ~45 minutes
+**Theme:** "In Exercise 1, you used patching to safely deploy a workflow change. Now let's deploy changes using Worker Versioning — where Temporal's infrastructure handles routing instead of conditional code paths."
+**Skills:** Worker Deployments, deployment versions, `PINNED` vs `AUTO_UPGRADE`, `WorkerDeploymentConfig`, emergency rollback, upgrade-on-continue-as-new
 
 ---
 
-## Part A — Deploy with auto-upgrade (~12 min)
+## Setup: Clean Slate
+
+If your Temporal dev server is still running from Exercise 1, stop it (Ctrl+C) and restart it so there are no leftover workflow executions:
+
+```bash
+temporal server start-dev
+```
+
+> **Note:** Keep this running for the entire exercise. All code changes in this exercise happen before any workers or workflows start — every workflow will be versioned from birth.
+
+---
+
+## Part A — Enable Worker Versioning + Deploy Version 1.0 (~12 min)
+
+**Goal:** Configure worker versioning infrastructure and deploy the first versioned worker.
 
 1. Navigate to the exercise folder:
 
@@ -14,45 +28,39 @@
 cd exercises/exercise-2/practice
 ```
 
-2. Start the **unversioned** V1 worker:
+2. Review the starting code. This is the Exercise 1 solution — `ValetParkingWorkflow` already calls `notify_owner` (guarded by `workflow.patched("add-notify-owner")`). The `bill_customer` activity and its models are already defined — you'll use them later.
 
-```bash
-make worker
-```
+3. **Make three code changes** (follow the `TODO(Part A)` comments in each file):
 
-3. In a new terminal, start the load simulator:
+   **a.** In `valet/valet_parking_workflow.py` — import `VersioningBehavior` and add `versioning_behavior=VersioningBehavior.PINNED` to `@workflow.defn`:
 
-```bash
-make load
-```
-
-   Let several workflows start. Then **stop** both the worker and the load simulator (Ctrl+C in each terminal).
-
-3. **Configure worker versioning.** Make three changes:
-
-   **a.** Add `versioning_behavior` to both workflows.
-
-   In `valet/valet_parking_workflow.py`:
    ```python
    from temporalio.common import VersioningBehavior
 
-   @workflow.defn(versioning_behavior=VersioningBehavior.AUTO_UPGRADE)
+   @workflow.defn(versioning_behavior=VersioningBehavior.PINNED)
    class ValetParkingWorkflow:
    ```
 
-   In `valet/parking_lot_workflow.py`:
+   > **Why PINNED?** Each parking transaction should complete on the code version it started on. No mid-execution surprises, no patching needed.
+
+   **b.** In `valet/parking_lot_workflow.py` — import `VersioningBehavior` and add `versioning_behavior=VersioningBehavior.PINNED` to `@workflow.defn`:
+
    ```python
    from temporalio.common import VersioningBehavior
 
-   @workflow.defn(versioning_behavior=VersioningBehavior.AUTO_UPGRADE)
+   @workflow.defn(versioning_behavior=VersioningBehavior.PINNED)
    class ParkingLotWorkflow:
    ```
 
-   **b.** Add `WorkerDeploymentConfig` to `valet/worker.py`:
+   > **Why PINNED here too?** `ParkingLotWorkflow` is an immortal singleton that uses continue-as-new. With PINNED, each CaN run stays on its version, and the *next* run after CaN picks up the latest Current Version automatically. This means we can make non-replay-safe changes without patching — the version boundary is the CaN boundary. (We'll see this in action in Part D.)
+
+   **c.** In `valet/worker.py` — import `WorkerDeploymentVersion` and `WorkerDeploymentConfig`, create the deployment config from environment variables, and pass it to the `Worker`:
 
    ```python
    from temporalio.common import WorkerDeploymentVersion
    from temporalio.worker import Worker, WorkerDeploymentConfig
+
+   # ... inside main(), after creating the client:
 
    deployment_name = os.environ.get("TEMPORAL_DEPLOYMENT_NAME")
    build_id = os.environ.get("TEMPORAL_WORKER_BUILD_ID")
@@ -70,97 +78,79 @@ make load
    worker = Worker(
        client,
        task_queue="valet",
-       ...
+       # ... existing config ...
        deployment_config=deployment_config,
    )
    ```
 
-4. Start the **versioned** V1 worker:
+4. Start the versioned 1.0 worker (in a **new terminal**):
 
 ```bash
-make versioned-worker BUILD_ID=v1
+make start-worker BUILD_ID=1.0
 ```
 
-5. Set V1 as the current version:
+5. Register version 1.0 as the **Current Version** for the deployment:
 
 ```bash
-temporal worker deployment set-current \
-  --deployment-name valet-deploy \
-  --build-id v1
+temporal worker deployment set-current-version \
+    --deployment-name valet-deploy \
+    --build-id 1.0
 ```
 
-6. Start the load simulator again. Watch workflows flow through V1.
-
-7. Deploy the V2 worker (the patched code from Exercise 1):
+6. Inspect the deployment to confirm:
 
 ```bash
-make versioned-worker BUILD_ID=v2
+temporal worker deployment describe --name valet-deploy
 ```
 
-8. Set V2 as current:
+   You should see version 1.0 listed as the Current Version.
+
+7. Start the load simulator (in a **new terminal**):
 
 ```bash
-temporal worker deployment set-current \
-  --deployment-name valet-deploy \
-  --build-id v2
+make load
 ```
 
-9. **Observe**: New workflows go to V2 (expected). In-flight V1 workflows **also auto-upgrade to V2** when they reach their next task. The `workflow.patched("add-notify-owner")` guard from Exercise 1 makes this safe.
+8. Open the Temporal Web UI at [http://localhost:8233](http://localhost:8233) and watch workflows flow through the versioned 1.0 worker.
 
-10. Once all V1 workflows complete, shut down the V1 worker.
-
-> **Key takeaway:** Auto-upgrade + patching is the happy path. Versioning controls rollout; patching ensures replay compatibility.
+> **What you've learned:**
+> - **Worker Deployment:** A named group (e.g., `valet-deploy`) that contains versioned workers.
+> - **Worker Deployment Version:** A specific build (e.g., `1.0`) within a deployment, identified by a build ID.
+> - **`WorkerDeploymentConfig`:** How the worker tells Temporal which deployment and build ID it belongs to.
+> - **`set-current-version`:** How you tell Temporal which version should receive new workflow tasks.
 
 ---
 
-## Part B — Deploy with pinned versions (~12 min)
+## Part B — Deploy a Breaking Change — No Patching Needed (~15 min)
 
-**Scenario:** "Product wants to add billing at the end of the workflow. Rather than writing patch logic, we'll use pinned versions — old workflows finish on old code, new workflows run on new code. No patching needed."
+**Motivation:** "Product wants billing at the end of the valet workflow. This adds a new activity — a non-replay-safe change. In Exercise 1, you'd have needed a patch. With PINNED versioning, you don't."
 
-1. Apply the provided V3 code changes (add these to your files):
+1. **Make three code changes** to `valet/valet_parking_workflow.py` (follow the `TODO(Part B)` comments):
 
-   **Models** (`valet/models.py`):
+   **a.** Remove the `workflow.patched("add-notify-owner")` guard — call `notify_owner` unconditionally:
+
    ```python
-   @dataclass
-   class BillCustomerInput:
-       license_plate: str
-       duration_seconds: int
-       total_distance: float
+   # Before (Exercise 1 patched version):
+   if workflow.patched("add-notify-owner"):
+       await workflow.execute_activity(notify_owner, ...)
 
-   @dataclass
-   class BillCustomerOutput:
-       amount: float
+   # After (no patch needed with PINNED):
+   await workflow.execute_activity(notify_owner, ...)
    ```
 
-   Update `ValetParkingOutput`:
-   ```python
-   @dataclass
-   class ValetParkingOutput:
-       total_bill: float | None = None
-   ```
+   > With PINNED versioning, old workflows never replay on new code. The patch guard from Exercise 1 is no longer needed.
 
-   **Activity** (`valet/activities.py`):
-   ```python
-   @activity.defn
-   async def bill_customer(input: BillCustomerInput) -> BillCustomerOutput:
-       minutes = input.duration_seconds / 60
-       amount = 5.0 + (0.50 * minutes) + (2.0 * input.total_distance)
-       amount = round(amount, 2)
-       activity.logger.info(
-           f"Billing {input.license_plate}: ${amount} "
-           f"({minutes:.1f} min, {input.total_distance:.1f} mi)"
-       )
-       return BillCustomerOutput(amount=amount)
-   ```
+   **b.** Capture the return values from both `move_car` calls:
 
-   **Workflow** (`valet/valet_parking_workflow.py`) — capture move_car results and add billing at the end:
    ```python
-   # ... (notify_owner) ...
    move_to_parking_space_result = await workflow.execute_activity(move_car, ...)
    # ... (sleep) ...
    move_to_valet_result = await workflow.execute_activity(move_car, ...)
-   # ... (release_parking_space) ...
+   ```
 
+   **c.** Add `bill_customer` at the end of the workflow (import `bill_customer` and `BillCustomerInput` at the top):
+
+   ```python
    bill_result = await workflow.execute_activity(
        bill_customer,
        BillCustomerInput(
@@ -177,52 +167,233 @@ temporal worker deployment set-current \
    return ValetParkingOutput(total_bill=bill_result.amount)
    ```
 
-   **Worker** (`valet/worker.py`): Register `bill_customer` in the activities list.
-
-2. Change `ValetParkingWorkflow` versioning behavior to `PINNED`:
-
-```python
-@workflow.defn(versioning_behavior=VersioningBehavior.PINNED)
-class ValetParkingWorkflow:
-```
-
-3. Deploy the V3 worker:
+2. Start a 2.0 worker **alongside** the running 1.0 worker (in a **new terminal**):
 
 ```bash
-make versioned-worker BUILD_ID=v3
+make start-worker BUILD_ID=2.0
 ```
 
-4. Set V3 as current:
+3. Set 2.0 as the Current Version:
 
 ```bash
-temporal worker deployment set-current \
-  --deployment-name valet-deploy \
-  --build-id v3
+temporal worker deployment set-current-version \
+    --deployment-name valet-deploy \
+    --build-id 2.0
 ```
 
-5. **Observe**: New workflows go to V3 with billing. In-flight V2 workflows **stay pinned to V2** — they keep running on the V2 worker.
+4. **Observe in the Temporal Web UI:**
+   - **New workflows** start on version 2.0 — they include billing.
+   - **In-flight 1.0 workflows** stay pinned to version 1.0 — they complete on the 1.0 worker with no billing, no patching, no replay issues.
 
-6. Use `temporal task-queue describe` to monitor V2 draining. Notice: `ParkingLotWorkflow` is pinned to V2 and **never drains** — it's a singleton that runs forever via continue-as-new.
+   > **This is the "aha" moment.** You just deployed a non-replay-safe change with zero patching. Version isolation replaced the `workflow.patched()` guard from Exercise 1.
+
+5. Wait for all 1.0 workflows to complete (trip durations are 5–30 seconds), then **stop the 1.0 worker** (Ctrl+C in its terminal).
+
+6. Verify the deployment state:
+
+```bash
+temporal worker deployment describe --name valet-deploy
+```
+
+7. **Clean up v1.0** — once drained and the worker is stopped, delete the old version:
+
+```bash
+temporal worker deployment delete-version \
+    --deployment-name valet-deploy \
+    --build-id 1.0 \
+    --skip-drainage
+```
+
+> **What you've learned:**
+> - **Rainbow deployment model:** Multiple versions coexist. Temporal routes traffic between them — new workflows go to the Current Version, and in-flight workflows stay on their pinned version.
+> - **PINNED eliminates patching:** When workflows should complete on the version they started on, you never need `workflow.patched()` to maintain replay compatibility.
+> - **Sunsetting a version:** When a version has drained (no more workflows), stop its worker and delete the version.
+
+### Discussion: The Decision Matrix
+
+When should you use PINNED vs AUTO_UPGRADE?
+
+| Workflow Duration | Uses CaN? | Recommended Behavior | Patching Required? |
+|---|---|---|---|
+| Short (completes before next deploy) | N/A | PINNED | Never |
+| Medium (spans multiple deploys) | No | AUTO_UPGRADE | Yes |
+| Long (weeks to years) | Yes | PINNED + upgrade on CaN | Never |
+| Long (weeks to years) | No | AUTO_UPGRADE + patching | Yes |
+
+In our codebase:
+- `ValetParkingWorkflow` → **PINNED**. Each parking transaction completes within seconds to minutes. No patching needed.
+- `ParkingLotWorkflow` → **PINNED** + upgrade on CaN. It's an immortal singleton with continue-as-new. Each CaN run stays on its version, and the next run starts on the Current Version. No patching needed.
+
+> **When would you use AUTO_UPGRADE?** For medium-duration workflows (spanning multiple deploys) that don't use continue-as-new. AUTO_UPGRADE automatically migrates in-flight workflows to the new version on their next workflow task — but non-replay-safe changes still require patching.
 
 ---
 
-## Part C — Trampolining the ParkingLotWorkflow (~6 min)
+## Part C — Emergency Rollback & Remediation (~10 min)
 
-**The problem:** `ParkingLotWorkflow` is pinned to V2. Its continue-as-new cycles keep it on V2 forever. You can't shut down the V2 worker.
+**Motivation:** "Things don't always go smoothly. Let's see what happens when a bad deploy makes it to production — and how Worker Versioning gives you tools to respond immediately."
 
-1. Verify the problem: query the parking lot workflow's deployment version.
+**Scenario:** A developer deploys v3.0 with a bug in the `bill_customer` activity — they reference a field that doesn't exist on the input dataclass.
 
-2. `ParkingLotWorkflow` should use `AUTO_UPGRADE` versioning behavior (it was already set to `AUTO_UPGRADE`). Discuss why this is the right choice for singleton/immortal workflows.
+1. **Introduce the bug.** In `valet/activities.py`, add this line to the beginning of `bill_customer`:
 
-3. The next time `ParkingLotWorkflow` does continue-as-new (triggered by the 500-event threshold or `is_continue_as_new_suggested()`), the new run lands on V3.
+   ```python
+   @activity.defn
+   async def bill_customer(input: BillCustomerInput) -> BillCustomerOutput:
+       tip = input.tip_percentage  # BUG: tip_percentage doesn't exist on BillCustomerInput
+       # ... rest of the function
+   ```
 
-4. Verify: the parking lot workflow is now running on V3.
+   This will cause an `AttributeError` every time billing runs.
 
-5. Safely shut down the V2 worker.
+2. Start a 3.0 worker (in a **new terminal**):
 
-> **Key takeaway:** Long-running/immortal workflows should use `AUTO_UPGRADE` + continue-as-new as their version migration strategy. Design `continue_as_new` input to carry serializable state.
+```bash
+make start-worker BUILD_ID=3.0
+```
 
-> **Emergency remediation sidebar:**
-> - **Rollback:** Remove V2's assignment rule, put V1 back as current. New tasks go to V1.
-> - **Reset failed workflows:** `temporal workflow reset --workflow-id <id> --event-id <safe-point>`
-> - **Batch reset:** `temporal workflow reset --query 'WorkflowType="ValetParkingWorkflow" AND CloseStatus=3'`
+3. Set 3.0 as current:
+
+```bash
+temporal worker deployment set-current-version \
+    --deployment-name valet-deploy \
+    --build-id 3.0
+```
+
+4. **Watch the damage** in the Temporal Web UI or worker logs — new workflows start on 3.0, but crash at the billing step. The activity retries forever.
+
+### Step 1 — Instant rollback (stop the bleeding)
+
+5. Set v2.0 back as current — no code redeploy needed:
+
+```bash
+temporal worker deployment set-current-version \
+    --deployment-name valet-deploy \
+    --build-id 2.0
+```
+
+**Immediately**, new workflows are routed to v2.0 with working billing. But in-flight v3.0 workflows are still pinned to v3.0 — they're stuck.
+
+### Step 2 — Evacuate in-flight v3.0 workflows to v2.0
+
+6. Find the stuck v3.0 workflows. Look for running workflows in the Web UI that show activity failures, or list them:
+
+```bash
+temporal workflow list --query 'ExecutionStatus="Running"'
+```
+
+7. For each stuck workflow, reassign it to v2.0:
+
+```bash
+temporal workflow update-options \
+    --workflow-id <workflow-id> \
+    --versioning-override-behavior pinned \
+    --versioning-override-deployment-name valet-deploy \
+    --versioning-override-build-id 2.0
+```
+
+   > **Why is this replay-safe?** The workflow code between v2.0 and v3.0 is identical — the bug is in the activity implementation, not the workflow definition. The v2.0 worker replays the workflow history, reaches the billing step, and calls the working v2.0 `bill_customer`. Failed activity attempts in history don't cause replay errors — the workflow just sees "activity not yet completed" and retries.
+
+8. **Observe:** the previously-stuck workflows now complete successfully on v2.0.
+
+### Step 3 — Fix the bug and deploy v3.1
+
+9. **Fix the bug.** Remove the `tip = input.tip_percentage` line you added in step 1.
+
+10. Start a v3.1 worker (in a **new terminal**):
+
+```bash
+make start-worker BUILD_ID=3.1
+```
+
+11. Set v3.1 as current:
+
+```bash
+temporal worker deployment set-current-version \
+    --deployment-name valet-deploy \
+    --build-id 3.1
+```
+
+New workflows now flow through v3.1 with working billing.
+
+### Step 4 — Clean up
+
+12. **Stop the v3.0 worker** (Ctrl+C).
+
+13. Delete the broken v3.0 version:
+
+```bash
+temporal worker deployment delete-version \
+    --deployment-name valet-deploy \
+    --build-id 3.0 \
+    --skip-drainage
+```
+
+14. Once v2.0 has fully drained, stop the v2.0 worker and delete v2.0 as well:
+
+```bash
+temporal worker deployment delete-version \
+    --deployment-name valet-deploy \
+    --build-id 2.0 \
+    --skip-drainage
+```
+
+> **What you've learned:**
+> - **`set-current-version` as an instant rollback** — no code redeploy needed, new workflows immediately go to the safe version.
+> - **Fix-forward with a patch version** (v3.1) rather than permanently rolling back.
+> - **`update-options` to evacuate workflows** — surgically move pinned workflows from a broken version to a working one.
+> - **Blast radius containment with PINNED** — only workflows that started on v3.0 are affected. They can be individually moved.
+> - **Activity-only bugs are safe to move** — the workflow definition didn't change, so there's no history divergence when v2.0 replays v3.0 workflows.
+
+---
+
+## Part D — Upgrade on Continue-as-New (~8 min)
+
+**Goal:** Make a non-replay-safe change to `ParkingLotWorkflow` without patching.
+
+**Motivation:** "We need to add a short drain delay to `ParkingLotWorkflow` before it does continue-as-new — this lets in-flight updates finish before the state snapshot. This adds a `workflow.sleep()` call, which changes the command sequence — a non-replay-safe change. With AUTO_UPGRADE, you'd need to patch. But because `ParkingLotWorkflow` is PINNED and uses continue-as-new, the current run stays on old code and the next run after CaN starts on new code — no patching needed."
+
+1. **Make one code change** in `valet/parking_lot_workflow.py` (follow the `TODO(Part D)` comment):
+
+   Add a 1-second drain delay before continue-as-new:
+
+   ```python
+   from datetime import timedelta
+
+   # Inside run(), after wait_condition:
+   await workflow.sleep(timedelta(seconds=1))
+   workflow.continue_as_new(ParkingLotInput(parking_spaces=self.parking_spaces))
+   ```
+
+2. Start a v4.0 worker (in a **new terminal**):
+
+```bash
+make start-worker BUILD_ID=4.0
+```
+
+3. Set v4.0 as current:
+
+```bash
+temporal worker deployment set-current-version \
+    --deployment-name valet-deploy \
+    --build-id 4.0
+```
+
+4. **Observe:** `ParkingLotWorkflow`'s current run continues on v3.1 code (PINNED — it stays on its version). When it eventually hits the history threshold and performs continue-as-new, the **new run** starts on v4.0 with the drain delay — no patching needed.
+
+   New `ValetParkingWorkflow` instances immediately start on v4.0.
+
+5. Wait for all v3.1 workflows to drain (both `ValetParkingWorkflow` and `ParkingLotWorkflow`). Once `ParkingLotWorkflow` has migrated to v4.0, **stop the v3.1 worker** (Ctrl+C) and clean up:
+
+```bash
+temporal worker deployment delete-version \
+    --deployment-name valet-deploy \
+    --build-id 3.1 \
+    --skip-drainage
+```
+
+6. Stop the load simulator (Ctrl+C) and stop the v4.0 worker when you're satisfied.
+
+> **What you've learned:**
+> - **Upgrade-on-CaN pattern:** For long-lived PINNED workflows that use continue-as-new, each run stays on its version, and the next run after CaN picks up the latest code. No patching needed.
+> - **CaN is the version boundary.** Design your `continue_as_new` input to carry all necessary state so the new version can start cleanly.
+> - **PINNED + CaN vs AUTO_UPGRADE:** If `ParkingLotWorkflow` were AUTO_UPGRADE instead, this change would have required a `workflow.patched()` guard — just like Exercise 1. PINNED + CaN eliminates that entirely.
