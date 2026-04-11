@@ -98,6 +98,7 @@ async def notify_owner(input: NotifyOwnerInput) -> NotifyOwnerOutput:
 @activity.defn
 async def bill_customer(input: BillCustomerInput) -> BillCustomerOutput:
     # Simple billing: $5 base + $0.50 per minute + $2 per mile
+    # TODO(Part C): Introduce a bug here — add: tip = input.tip_percentage
     minutes = input.duration_seconds / 60
     amount = 5.0 + (0.50 * minutes) + (2.0 * input.total_distance)
     amount = round(amount, 2)

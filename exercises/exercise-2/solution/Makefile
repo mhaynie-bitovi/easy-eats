@@ -1,5 +1,5 @@
 PYTHON ?= ../../../env/bin/python
-DEPLOYMENT_NAME ?= valet-deploy
+DEPLOYMENT_NAME ?= valet
 BUILD_ID ?= 1.0
 
 .PHONY: start-worker load starter test

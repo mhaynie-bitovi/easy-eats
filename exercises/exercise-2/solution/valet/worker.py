@@ -5,6 +5,7 @@ import os
 from temporalio.client import Client
 from temporalio.common import WorkerDeploymentVersion
 from temporalio.worker import Worker, WorkerDeploymentConfig
+from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner, SandboxRestrictions
 
 from valet.activities import (
     bill_customer,
@@ -25,18 +26,13 @@ async def main():
 
     client = await Client.connect(temporal_address, namespace=temporal_namespace)
 
-    deployment_name = os.environ.get("TEMPORAL_DEPLOYMENT_NAME")
-    build_id = os.environ.get("TEMPORAL_WORKER_BUILD_ID")
-
-    deployment_config = None
-    if deployment_name and build_id:
-        deployment_config = WorkerDeploymentConfig(
-            version=WorkerDeploymentVersion(
-                deployment_name=deployment_name,
-                build_id=build_id,
-            ),
-            use_worker_versioning=True,
-        )
+    deployment_config = WorkerDeploymentConfig(
+        version=WorkerDeploymentVersion(
+            deployment_name=os.environ["TEMPORAL_DEPLOYMENT_NAME"],
+            build_id=os.environ["TEMPORAL_WORKER_BUILD_ID"],
+        ),
+        use_worker_versioning=True,
+    )
 
     worker = Worker(
         client,
@@ -44,6 +40,11 @@ async def main():
         workflows=[ValetParkingWorkflow, ParkingLotWorkflow],
         activities=[move_car, request_parking_space, release_parking_space, notify_owner, bill_customer],
         deployment_config=deployment_config,
+        workflow_runner=SandboxedWorkflowRunner(
+            # Prevent the sandbox from re-reading workflow code from disk on each run.
+            # Without this, a running worker would pick up file edits without a restart.
+            restrictions=SandboxRestrictions.default.with_passthrough_modules("valet")
+        ),
     )
 
     print("Worker running ...")

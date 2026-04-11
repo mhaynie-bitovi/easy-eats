@@ -1,0 +1,10 @@
+{
+    "executionEnvironments": [
+        { "root": "exercises/exercise-1/practice" },
+        { "root": "exercises/exercise-1/solution" },
+        { "root": "exercises/exercise-2/practice" },
+        { "root": "exercises/exercise-2/solution" },
+        { "root": "exercises/exercise-3/practice" },
+        { "root": "exercises/exercise-3/solution" }
+    ]
+}

@@ -1,13 +1,5 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:venv",
-    "python.analysis.extraPaths": [
-        "exercises/exercise-1/practice",
-        "exercises/exercise-1/solution",
-        "exercises/exercise-2/practice",
-        "exercises/exercise-2/solution",
-        "exercises/exercise-3/practice",
-        "exercises/exercise-3/solution"
-    ],
     "files.exclude": {
         "**/__pycache__": true,
         "**/*.egg-info": true,

@@ -3,7 +3,7 @@ from datetime import timedelta
 from temporalio import workflow
 
 # TODO(Part A): Import VersioningBehavior:
-#   from temporalio.common import VersioningBehavior
+# from temporalio.common import VersioningBehavior
 
 with workflow.unsafe.imports_passed_through():
     from valet.activities import (
@@ -12,9 +12,11 @@ with workflow.unsafe.imports_passed_through():
         release_parking_space,
         request_parking_space,
         # TODO(Part B): Import bill_customer
+        # bill_customer,
     )
     from valet.models import (
         # TODO(Part B): Import BillCustomerInput
+        # BillCustomerInput,
         Location,
         LocationKind,
         MoveCarInput,
@@ -48,10 +50,6 @@ class ValetParkingWorkflow:
         )
 
         # Notify the owner their car is being parked
-        # TODO(Part B): Remove the workflow.patched() guard below.
-        #   With PINNED versioning, old workflows complete on old code and never
-        #   replay on new code, so the patch is no longer needed. Just call the
-        #   activity unconditionally.
         if workflow.patched("add-notify-owner"):
             await workflow.execute_activity(
                 notify_owner,
@@ -107,18 +105,6 @@ class ValetParkingWorkflow:
         )
 
         # TODO(Part B): Add bill_customer activity call here.
-        #   bill_result = await workflow.execute_activity(
-        #       bill_customer,
-        #       BillCustomerInput(
-        #           license_plate=input.license_plate,
-        #           duration_seconds=input.trip_duration_seconds,
-        #           total_distance=(
-        #               move_to_parking_space_result.distance_driven
-        #               + move_to_valet_result.distance_driven
-        #           ),
-        #       ),
-        #       start_to_close_timeout=timedelta(seconds=10),
-        #   )
-        #   Then return: ValetParkingOutput(total_bill=bill_result.amount)
 
+        #   Then return: ValetParkingOutput(total_bill=bill_result.amount)
         return ValetParkingOutput()

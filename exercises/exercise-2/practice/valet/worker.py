@@ -4,11 +4,11 @@ import os
 
 from temporalio.client import Client
 from temporalio.worker import Worker
+from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner, SandboxRestrictions
 
 # TODO(Part A): Import WorkerDeploymentVersion and WorkerDeploymentConfig:
-#   from temporalio.common import WorkerDeploymentVersion
-#   from temporalio.worker import WorkerDeploymentConfig
-#   (You can add WorkerDeploymentConfig to the existing Worker import above.)
+# from temporalio.common import WorkerDeploymentVersion
+# from temporalio.worker import WorkerDeploymentConfig
 
 from valet.activities import (
     bill_customer,
@@ -29,21 +29,8 @@ async def main():
 
     client = await Client.connect(temporal_address, namespace=temporal_namespace)
 
-    # TODO(Part A): Read TEMPORAL_DEPLOYMENT_NAME and TEMPORAL_WORKER_BUILD_ID from env vars.
-    #   If both are set, create a WorkerDeploymentConfig and pass it to the Worker below.
-    #
-    #   deployment_name = os.environ.get("TEMPORAL_DEPLOYMENT_NAME")
-    #   build_id = os.environ.get("TEMPORAL_WORKER_BUILD_ID")
-    #
-    #   deployment_config = None
-    #   if deployment_name and build_id:
-    #       deployment_config = WorkerDeploymentConfig(
-    #           version=WorkerDeploymentVersion(
-    #               deployment_name=deployment_name,
-    #               build_id=build_id,
-    #           ),
-    #           use_worker_versioning=True,
-    #       )
+    # TODO(Part A): Create a WorkerDeploymentConfig from the env vars and pass it
+    #   to the Worker below.
 
     worker = Worker(
         client,
@@ -51,6 +38,11 @@ async def main():
         workflows=[ValetParkingWorkflow, ParkingLotWorkflow],
         activities=[move_car, request_parking_space, release_parking_space, notify_owner, bill_customer],
         # TODO(Part A): Add deployment_config=deployment_config here.
+        workflow_runner=SandboxedWorkflowRunner(
+            # Prevent the sandbox from re-reading workflow code from disk on each run.
+            # Without this, a running worker would pick up file edits without a restart.
+            restrictions=SandboxRestrictions.default.with_passthrough_modules("valet")
+        ),
     )
 
     print("Worker running ...")

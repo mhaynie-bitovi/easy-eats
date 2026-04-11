@@ -20,6 +20,7 @@ class ParkingLotWorkflow:
         self.parking_spaces = input.parking_spaces or self.parking_spaces
 
         await workflow.wait_condition(lambda: self._should_continue_as_new)
+
         workflow.continue_as_new(ParkingLotInput(parking_spaces=self.parking_spaces))
 
     @workflow.update
