@@ -24,18 +24,20 @@ async def main() -> None:
         id=str(random.randint(1, NUM_VALET_ZONES)),
     )
 
-    result = await client.execute_workflow(
+    workflow_id = f"valet-{license_plate}" 
+    result = await client.start_workflow(
         ValetParkingWorkflow.run,
         ValetParkingInput(
             license_plate=license_plate,
-            trip_duration_seconds=10,
+            trip_duration_seconds=30,
             valet_zone_location=valet_zone_location,
         ),
-        id=f"valet-{license_plate}",
+        id=workflow_id,
         task_queue="valet",
     )
 
-    print(f"Result: {result}")
+    print(f"Workflow started: {workflow_id}")
+
 
 
 if __name__ == "__main__":

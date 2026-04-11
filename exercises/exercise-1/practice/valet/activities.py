@@ -10,6 +10,8 @@ from temporalio.common import WorkflowIDConflictPolicy
 from valet.models import (
     MoveCarInput,
     MoveCarOutput,
+    NotifyOwnerInput,
+    NotifyOwnerOutput,
     ParkingLotInput,
     ReleaseSpaceInput,
     ReleaseSpaceOutput,
@@ -81,4 +83,13 @@ async def release_space(input: ReleaseSpaceInput) -> ReleaseSpaceOutput:
         start_workflow_operation=start_op,
     )
     return ReleaseSpaceOutput()
+
+
+@activity.defn
+async def notify_owner(input: NotifyOwnerInput) -> NotifyOwnerOutput:
+    activity.logger.info(
+        f"Notifying owner of {input.license_plate}: {input.message}"
+    )
+    await asyncio.sleep(0.5)
+    return NotifyOwnerOutput(notified=True)
 

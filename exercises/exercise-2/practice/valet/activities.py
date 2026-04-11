@@ -93,3 +93,9 @@ async def notify_owner(input: NotifyOwnerInput) -> NotifyOwnerOutput:
     # Simulate notification delay
     await asyncio.sleep(0.5)
     return NotifyOwnerOutput(notified=True)
+
+
+# TODO(Part B.1): Add a bill_customer activity here.
+#   Formula: $5 base + $0.50/min + $2/mile
+#   Return BillCustomerOutput(amount=...).
+#   Don't forget to add BillCustomerInput and BillCustomerOutput to the imports above.

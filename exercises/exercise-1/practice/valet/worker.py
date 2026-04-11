@@ -7,6 +7,7 @@ from temporalio.worker import Worker
 
 from valet.activities import (
     move_car,
+    notify_owner,
     release_space,
     request_space,
 )
@@ -26,7 +27,8 @@ async def main():
         client,
         task_queue="valet",
         workflows=[ValetParkingWorkflow, ParkingLotWorkflow],
-        activities=[move_car, request_space, release_space],
+        # TODO(Part C.2): Add notify_owner to this activities list.
+        activities=[move_car, request_space, release_space, notify_owner],
     )
 
     print("Worker running ...")

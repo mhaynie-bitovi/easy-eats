@@ -99,7 +99,7 @@ kubectl get deployments
 
 ## Part C — Non-replay-safe change with Progressive (~8 min)
 
-**Scenario:** Add the `notify_owner` activity to the workflow (same NDE change from Exercise 1, deployed via k8s).
+**Scenario:** Add the `notify_owner` activity to the workflow (same NDE change from Exercise 1, deployed via k8s). The notification is sent right after a parking space is assigned, before the car is moved.
 
 1. Switch to Progressive rollout strategy:
 

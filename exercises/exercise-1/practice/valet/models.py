@@ -69,3 +69,14 @@ class ParkingLotInput:
 @dataclass
 class ParkingLotOutput:
     pass
+
+
+@dataclass
+class NotifyOwnerInput:
+    license_plate: str
+    message: str
+
+
+@dataclass
+class NotifyOwnerOutput:
+    notified: bool

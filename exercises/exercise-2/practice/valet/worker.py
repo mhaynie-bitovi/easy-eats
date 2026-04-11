@@ -5,6 +5,10 @@ import os
 from temporalio.client import Client
 from temporalio.worker import Worker
 
+# TODO(Part A.3b): Import WorkerDeploymentVersion and WorkerDeploymentConfig:
+#   from temporalio.common import WorkerDeploymentVersion
+#   from temporalio.worker import Worker, WorkerDeploymentConfig
+
 from valet.activities import (
     move_car,
     notify_owner,
@@ -23,10 +27,16 @@ async def main():
 
     client = await Client.connect(temporal_address, namespace=temporal_namespace)
 
+    # TODO(Part A.3b): Add WorkerDeploymentConfig here.
+    #   Read TEMPORAL_DEPLOYMENT_NAME and TEMPORAL_WORKER_BUILD_ID from env vars.
+    #   If both are set, create a WorkerDeploymentConfig with a WorkerDeploymentVersion
+    #   and use_worker_versioning=True. Pass it as deployment_config= to the Worker below.
+
     worker = Worker(
         client,
         task_queue="valet",
         workflows=[ValetParkingWorkflow, ParkingLotWorkflow],
+        # TODO(Part B.1): Add bill_customer to this activities list.
         activities=[move_car, request_space, release_space, notify_owner],
     )
 

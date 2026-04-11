@@ -1,7 +1,7 @@
 # Exercise 1: Patching a Non-Deterministic Change + Replay Testing
 
 **Time:** ~30 minutes
-**Theme:** "Product wants us to notify the car owner when their car is being retrieved."
+**Theme:** "Product wants us to send the car owner a confirmation when their car is parked."
 **Skills:** Replay testing, identifying non-determinism errors (NDEs), using `workflow.patched()`
 
 ---
@@ -16,6 +16,7 @@ cd exercises/exercise-1/practice
 
 2. Examine the V1 `ValetParkingWorkflow` in `valet/valet_workflow.py`. Note the command sequence:
    - `request_space` → `move_car` (to space) → `sleep` → `move_car` (back) → `release_space`
+   - The `sleep` simulates the owner's trip — workflows will be "in flight" during this window.
 
 3. Start the Temporal dev server (in a **dedicated terminal**):
 
@@ -23,11 +24,15 @@ cd exercises/exercise-1/practice
 temporal server start-dev
 ```
 
+> **Note:** Keep this running for the entire exercise.
+
 4. Start the worker (in a **new terminal** from the same directory):
 
 ```bash
 make worker
 ```
+
+> **Note:** Keep this worker running — you'll be instructed when to restart it later.
 
 5. Start the load simulator (in a **new terminal** from the same directory):
 
@@ -55,45 +60,17 @@ make test
 
 ## Part B — Make the NDE-inducing change & see it fail (~8 min)
 
-Now add the `notify_owner` feature **without** patching to see what a non-determinism error looks like.
+Product wants us to send the car owner a notification when their car is about to be parked. A `notify_owner` activity and its models (`NotifyOwnerInput`, `NotifyOwnerOutput`) are already defined in `valet/activities.py` and `valet/models.py`. Your job is to call it from the workflow.
 
-1. Add new dataclasses to `valet/models.py`:
-
-```python
-@dataclass
-class NotifyOwnerInput:
-    license_plate: str
-    message: str
-
-
-@dataclass
-class NotifyOwnerOutput:
-    notified: bool
-```
-
-2. Add a new activity to `valet/activities.py`:
+1. Insert the activity call into `valet/valet_workflow.py` **after** `request_space` and **before** the first `move_car`:
 
 ```python
-from valet.models import NotifyOwnerInput, NotifyOwnerOutput
-
-@activity.defn
-async def notify_owner(input: NotifyOwnerInput) -> NotifyOwnerOutput:
-    activity.logger.info(
-        f"Notifying owner of {input.license_plate}: {input.message}"
-    )
-    await asyncio.sleep(0.5)
-    return NotifyOwnerOutput(notified=True)
-```
-
-3. Insert the activity call into `valet/valet_workflow.py` **after** `workflow.sleep()` and **before** the return `move_car`:
-
-```python
-# After sleep:
+# After request_space, before move_car:
 await workflow.execute_activity(
     notify_owner,
     NotifyOwnerInput(
         license_plate=input.license_plate,
-        message="Your car is being retrieved!",
+        message="Your car is being parked!",
     ),
     start_to_close_timeout=timedelta(seconds=10),
 )
@@ -101,13 +78,13 @@ await workflow.execute_activity(
 
    Don't forget to add `notify_owner` and `NotifyOwnerInput` to the imports.
 
-4. Run the replay test — **it fails** with a non-determinism error:
+2. Run the replay test — **it fails** with a non-determinism error:
 
 ```bash
 make test
 ```
 
-> **This is the "aha" moment.** The old workflow history doesn't have a `notify_owner` command, but the new code expects one. The command sequence doesn't match → non-determinism error.
+> **This is the "aha" moment.** The old workflow history doesn't have a `notify_owner` command after `request_space`, but the new code expects one. The command sequence doesn't match → non-determinism error.
 
 ---
 
@@ -121,7 +98,7 @@ if workflow.patched("add-notify-owner"):
         notify_owner,
         NotifyOwnerInput(
             license_plate=input.license_plate,
-            message="Your car is being retrieved!",
+            message="Your car is being parked!",
         ),
         start_to_close_timeout=timedelta(seconds=10),
     )
@@ -139,7 +116,43 @@ make test
 
 ---
 
-## Part D — Discussion: ties to auto-upgrade (~4 min)
+## Part D — See it in action (~6 min)
+
+Now let's watch the patched workflow handle both in-flight (old) and brand-new executions. We'll use the starter script (`make starter`), which kicks off a **single** workflow per invocation, making it easy to track exactly which executions should take the pre-patch vs post-patch path.
+
+1. Make sure the **old (unpatched) worker is still running**. Start a workflow in a **new terminal**:
+
+```bash
+make starter
+```
+
+   Note the workflow ID printed to the terminal (e.g. `valet-CA-1ABC123`). This is your **pre-patch workflow**. It has a 30-second trip, so it will sit in `sleep` for a bit — leave it in flight.
+
+2. **Stop the old worker** (Ctrl+C) and restart it with the patched code:
+
+```bash
+make worker
+```
+
+3. Watch the first workflow complete in the Temporal Web UI at [http://localhost:8233](http://localhost:8233). It completes **without** `notify_owner` — `workflow.patched()` returned `False` during replay (no marker in the history) and skipped the notification block.
+
+4. Now start a **second** workflow:
+
+```bash
+make starter
+```
+
+   Note this workflow ID — this is your **post-patch workflow**.
+
+5. Watch this second workflow in the Temporal Web UI. It **includes** `notify_owner` right after `request_space` — `workflow.patched()` returned `True` during live execution and wrote a marker event into the history.
+
+6. Stop the worker when you're satisfied (Ctrl+C).
+
+> This is the auto-upgrade model in action: a single patched worker fleet safely processes both old and new workflows without any routing or versioning configuration.
+
+---
+
+## Part E — Discussion: ties to auto-upgrade (~4 min)
 
 **Instructor-led discussion (no code changes):**
 
