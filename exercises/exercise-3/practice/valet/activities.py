@@ -33,10 +33,7 @@ async def move_car(input: MoveCarInput) -> MoveCarOutput:
         f"to {input.to_location.kind}:{input.to_location.id}"
     )
 
-    # TODO(Part B.1): Change the distance range from (0.1, 2.0) to (0.5, 5.0)
     distance_driven = round(random.uniform(0.1, 2.0), 2)
-
-    # TODO(Part B.1): Add logging: activity.logger.info(f"distance_driven: {distance_driven}")
 
     # Simulate driving time
     await asyncio.sleep(random.uniform(1.0, 5.0))

@@ -75,6 +75,16 @@ class ValetParkingWorkflow:
         # Here we simulate the owner's trip with a hardcoded timer.
         await workflow.sleep(input.trip_duration_seconds)
 
+        # Notify the owner their car is being retrieved
+        await workflow.execute_activity(
+            notify_owner,
+            NotifyOwnerInput(
+                license_plate=input.license_plate,
+                message="Your car is being retrieved!",
+            ),
+            start_to_close_timeout=timedelta(seconds=10),
+        )
+
         # Move car from parking space back to the original valet zone
         move_to_valet_result = await workflow.execute_activity(
             move_car,

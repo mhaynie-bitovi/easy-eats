@@ -1,5 +1,5 @@
 PYTHON ?= ../../../env/bin/python
-TAG ?= latest
+tag ?= latest
 IMAGE_NAME = valet-worker
 WORKER_CONTROLLER_NAMESPACE = temporal-worker-controller
 WORKER_CONTROLLER_VERSION ?= 0.24.0
@@ -35,14 +35,16 @@ setup:
 		--namespace $(WORKER_CONTROLLER_NAMESPACE) \
 		--set replicas=1 \
 		--wait
+	@echo "==> Applying TemporalConnection..."
+	kubectl apply -f k8s/temporal-connection.yaml
 	@echo "==> Setup complete. Verifying pods..."
 	kubectl get pods -n $(WORKER_CONTROLLER_NAMESPACE)
 	kubectl get crd | grep temporal
 
 ## build — build Docker image inside minikube's Docker daemon
 build:
-	@echo "==> Building image $(IMAGE_NAME):$(TAG) in minikube..."
-	eval $$(minikube docker-env) && docker build -t $(IMAGE_NAME):$(TAG) .
+	@echo "==> Building image $(IMAGE_NAME):$(tag) in minikube..."
+	eval $$(minikube docker-env) && docker build -t $(IMAGE_NAME):$(tag) .
 
 ## deploy — apply TemporalConnection + TemporalWorkerDeployment
 deploy:
